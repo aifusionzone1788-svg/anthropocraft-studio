@@ -1,0 +1,6 @@
+{
+  "name": "ANTHROPOCRAFT STUDIO",
+  "description": "Premium dark editorial portfolio and commission studio for AnthroCraft Studio — creating expressive furry character artwork, reference sheets, and custom commissions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

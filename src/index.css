@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg: #050505;
+    --ink: #F5F5F5;
+    --accent: #C5A059;
+    --accent-hover: #d6b46f;
+    --card-bg: #0c0c0c;
+    --font-display: 'Syne', 'Helvetica Neue', Arial, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg);
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-sans);
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1f1f23;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C5A059;
+}
+
+/* Bold typography specific utilities */
+.text-accent {
+  color: #C5A059;
+}
+
+.border-accent {
+  border-color: #C5A059;
+}
+
+.bg-accent {
+  background-color: #C5A059;
+}
+
+.border-accent-subtle {
+  border-color: rgba(197, 160, 89, 0.3);
+}
+
+.border-subtle {
+  border-color: rgba(245, 245, 245, 0.1);
+}
+
+/* Geometric Star Decorative Element */
+.star-decor {
+  display: inline-block;
+  background-color: #C5A059;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* Subtle architectural grid pattern */
+.bg-grid-pattern {
+  background-size: 56px 56px;
+  background-image: 
+    linear-gradient(to right, rgba(245, 245, 245, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(245, 245, 245, 0.02) 1px, transparent 1px);
+}
+
