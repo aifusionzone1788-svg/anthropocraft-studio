@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useStudio } from '../context/StudioContext';
 import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
-import { X, Save, RotateCcw } from 'lucide-react';
+import { X, Save, RotateCcw, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { RateTier } from '../types';
+import { compressImageFile } from '../utils/imageHelper';
 
 export const EditRatesModal: React.FC = () => {
   const {
@@ -173,6 +174,66 @@ export const EditRatesModal: React.FC = () => {
                   onChange={(e) => handleTierChange(tier.id, 'description', e.target.value)}
                   className="w-full bg-[#0c0c0c] border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-[#C5A059] focus:outline-none resize-none"
                 />
+              </div>
+
+              {/* Sample Artwork Image Field */}
+              <div className="pt-1">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+                    SAMPLE ARTWORK IMAGE (OPTIONAL)
+                  </label>
+                  {tier.imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => handleTierChange(tier.id, 'imageUrl', '')}
+                      className="text-[10px] font-mono text-red-400 hover:text-red-300 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>REMOVE IMAGE</span>
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {tier.imageUrl ? (
+                    <div className="w-10 h-10 shrink-0 border border-zinc-700 bg-black overflow-hidden relative">
+                      <img
+                        src={tier.imageUrl}
+                        alt={tier.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 shrink-0 border border-dashed border-zinc-700 bg-[#080808] flex items-center justify-center text-zinc-600">
+                      <ImageIcon className="w-4 h-4" />
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    placeholder="Enter Image URL or upload file..."
+                    value={tier.imageUrl || ''}
+                    onChange={(e) => handleTierChange(tier.id, 'imageUrl', e.target.value)}
+                    className="flex-1 bg-[#0c0c0c] border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 focus:border-[#C5A059] focus:outline-none font-mono"
+                  />
+                  <label className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 text-xs font-mono cursor-pointer border border-zinc-700 shrink-0 transition-colors">
+                    <Upload className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>UPLOAD</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          try {
+                            const compressed = await compressImageFile(e.target.files[0], 1200, 800, 0.85);
+                            handleTierChange(tier.id, 'imageUrl', compressed);
+                          } catch (err) {
+                            console.error('Failed to compress image:', err);
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
           ))}

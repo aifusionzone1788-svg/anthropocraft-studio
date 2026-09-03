@@ -80,17 +80,42 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // If saved tiers still have '[ADD PRICE]', migrate them to new defaults
+          // List of legacy placeholder Unsplash images that were previously seeded
+          const legacySampleUrls = [
+            'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7',
+            'https://images.unsplash.com/photo-1516934024742-b461fba47600',
+            'https://images.unsplash.com/photo-1543466835-00a7907e9de1',
+            'https://images.unsplash.com/photo-1534188753412-3e26d0d618d6',
+            'https://images.unsplash.com/photo-1557053910-d9eadeed1c58',
+            'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+          ];
+
           return parsed.map((tier: RateTier) => {
             const initialMatch = INITIAL_RATE_TIERS.find((t) => t.id === tier.id);
-            if (tier.price.includes('[ADD') && initialMatch) {
-              return {
-                ...tier,
-                price: initialMatch.price,
-                imageUrl: tier.imageUrl || initialMatch.imageUrl,
-              };
+            let cleanedImageUrl = tier.imageUrl;
+
+            // Remove legacy sample image if matched
+            if (
+              cleanedImageUrl &&
+              legacySampleUrls.some((legacyUrl) => cleanedImageUrl?.startsWith(legacyUrl))
+            ) {
+              cleanedImageUrl = undefined;
             }
-            return tier;
+
+            const updatedTier: RateTier = {
+              ...tier,
+              imageUrl: cleanedImageUrl,
+            };
+
+            if (tier.price.includes('[ADD') && initialMatch) {
+              updatedTier.price = initialMatch.price;
+            }
+
+            if (!cleanedImageUrl) {
+              delete updatedTier.imageUrl;
+            }
+
+            return updatedTier;
           });
         }
       }
@@ -167,7 +192,16 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Rate actions
   const updateRateTier = (id: string, updates: Partial<RateTier>) => {
     setRateTiers((prev) =>
-      prev.map((tier) => (tier.id === id ? { ...tier, ...updates } : tier))
+      prev.map((tier) => {
+        if (tier.id === id) {
+          const updated = { ...tier, ...updates };
+          if ('imageUrl' in updates && (!updates.imageUrl || (typeof updates.imageUrl === 'string' && updates.imageUrl.trim() === ''))) {
+            delete updated.imageUrl;
+          }
+          return updated;
+        }
+        return tier;
+      })
     );
   };
 

@@ -141,7 +141,6 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
       '2 rounds of sketch & color revision',
       'Dynamic lighting & material finish',
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?q=80&w=1200&auto=format&fit=crop',
     featured: true,
   },
   {
@@ -157,7 +156,6 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
       '1 round of sketch review',
       'Optimized for social avatars & discord badges',
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1516934024742-b461fba47600?q=80&w=1200&auto=format&fit=crop',
   },
   {
     id: 'full-body-art',
@@ -172,7 +170,6 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
       'Complex pose exploration during sketch phase',
       'Layered source export upon request',
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1200&auto=format&fit=crop',
   },
   {
     id: 'reference-sheet',
@@ -187,7 +184,6 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
       'Precise CMYK / RGB color palette swatch chart',
       'Typography info panel (Name, Species, Traits, Notes)',
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1534188753412-3e26d0d618d6?q=80&w=1200&auto=format&fit=crop',
   },
   {
     id: 'mascot-design',
@@ -202,7 +198,6 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
       'Commercial usage license available',
       'Vector or ultra-high-res raster exports',
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?q=80&w=1200&auto=format&fit=crop',
   },
   {
     id: 'custom-commission',
@@ -217,6 +212,5 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
       'Comprehensive milestone check-ins',
       'Exclusive high-tier commercial rights support',
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
   },
 ];
