@@ -11,9 +11,11 @@ interface StudioContextType {
   updateArtwork: (id: string, updates: Partial<Artwork>) => void;
   rateTiers: RateTier[];
   updateRateTier: (id: string, updates: Partial<RateTier>) => void;
+  saveAllRateTiers: (tiers: RateTier[]) => void;
   resetRatesToDefaults: () => void;
   studioConfig: StudioConfig;
   updateStudioConfig: (updates: Partial<StudioConfig>) => void;
+  updateSocials: (socials: Partial<StudioConfig['socials']>) => void;
   
   // Modals & Triggers
   isUploadModalOpen: boolean;
@@ -58,10 +60,30 @@ const StudioContext = createContext<StudioContextType | undefined>(undefined);
 const ARTWORKS_STORAGE_KEY = 'anthrocraft_artworks_v1';
 const USER_UPLOADS_STORAGE_KEY = 'anthrocraft_user_artworks_permanent_v1';
 const DELETED_ARTWORKS_STORAGE_KEY = 'anthrocraft_deleted_artworks_ids_v1';
-const RATES_STORAGE_KEY = 'anthrocraft_rates_v1';
-const CONFIG_STORAGE_KEY = 'anthrocraft_config_v1';
+const RATES_STORAGE_KEY = 'anthrocraft_rates_permanent_v2';
+const LEGACY_RATES_STORAGE_KEY = 'anthrocraft_rates_v1';
+const CONFIG_STORAGE_KEY = 'anthrocraft_config_permanent_v2';
+const LEGACY_CONFIG_STORAGE_KEY = 'anthrocraft_config_v1';
 const OWNER_MODE_STORAGE_KEY = 'anthrocraft_owner_mode_active';
 const OWNER_PIN_STORAGE_KEY = 'anthrocraft_owner_pin_code';
+
+// Resilient localStorage setter with automatic cache eviction on quota pressure
+function safeSetStorage(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e: any) {
+    console.warn(`Storage write issue for ${key}:`, e);
+    // If browser hits storage limits, clear redundant non-permanent caches and retry
+    if (e?.name === 'QuotaExceededError' || e?.code === 22) {
+      try {
+        localStorage.removeItem(ARTWORKS_STORAGE_KEY);
+        localStorage.setItem(key, value);
+      } catch (retryErr) {
+        console.error(`Storage quota exceeded even after cache cleanup for key ${key}:`, retryErr);
+      }
+    }
+  }
+}
 
 export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activePage, setActivePageState] = useState<PageType>('home');
@@ -151,64 +173,69 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   });
 
-  // Load rate tiers from localStorage
+  // Load rate tiers from permanent storage
   const [rateTiers, setRateTiers] = useState<RateTier[]>(() => {
     try {
-      const saved = localStorage.getItem(RATES_STORAGE_KEY);
+      const saved =
+        localStorage.getItem(RATES_STORAGE_KEY) ||
+        localStorage.getItem(LEGACY_RATES_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // List of legacy placeholder Unsplash images that were previously seeded
-          const legacySampleUrls = [
-            'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7',
-            'https://images.unsplash.com/photo-1516934024742-b461fba47600',
-            'https://images.unsplash.com/photo-1543466835-00a7907e9de1',
-            'https://images.unsplash.com/photo-1534188753412-3e26d0d618d6',
-            'https://images.unsplash.com/photo-1557053910-d9eadeed1c58',
-            'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
-          ];
-
-          return parsed.map((tier: RateTier) => {
-            const initialMatch = INITIAL_RATE_TIERS.find((t) => t.id === tier.id);
-            let cleanedImageUrl = tier.imageUrl;
-
-            // Remove legacy sample image if matched
-            if (
-              cleanedImageUrl &&
-              legacySampleUrls.some((legacyUrl) => cleanedImageUrl?.startsWith(legacyUrl))
-            ) {
-              cleanedImageUrl = undefined;
+          const userTierMap = new Map<string, RateTier>();
+          parsed.forEach((tier: RateTier) => {
+            if (tier && tier.id) {
+              userTierMap.set(tier.id, tier);
             }
-
-            const updatedTier: RateTier = {
-              ...tier,
-              imageUrl: cleanedImageUrl,
-            };
-
-            if (tier.price.includes('[ADD') && initialMatch) {
-              updatedTier.price = initialMatch.price;
-            }
-
-            if (!cleanedImageUrl) {
-              delete updatedTier.imageUrl;
-            }
-
-            return updatedTier;
           });
+
+          // Overlay user edits over initial rate tiers, preserving all custom prices, deliverables, and options
+          const mergedTiers: RateTier[] = INITIAL_RATE_TIERS.map((defaultTier) => {
+            const userEdit = userTierMap.get(defaultTier.id);
+            if (userEdit) {
+              userTierMap.delete(defaultTier.id);
+              return {
+                ...defaultTier,
+                ...userEdit,
+                deliverables:
+                  Array.isArray(userEdit.deliverables) && userEdit.deliverables.length > 0
+                    ? userEdit.deliverables
+                    : defaultTier.deliverables,
+              };
+            }
+            return defaultTier;
+          });
+
+          // Include any custom tiers added by user
+          userTierMap.forEach((customTier) => {
+            mergedTiers.push(customTier);
+          });
+
+          return mergedTiers;
         }
       }
     } catch (e) {
-      console.warn('Failed to load rate tiers:', e);
+      console.warn('Failed to load permanent rate tiers:', e);
     }
     return INITIAL_RATE_TIERS;
   });
 
-  // Load studio config from localStorage
+  // Load studio config and contact handles from permanent storage
   const [studioConfig, setStudioConfig] = useState<StudioConfig>(() => {
     try {
-      const saved = localStorage.getItem(CONFIG_STORAGE_KEY);
+      const saved =
+        localStorage.getItem(CONFIG_STORAGE_KEY) ||
+        localStorage.getItem(LEGACY_CONFIG_STORAGE_KEY);
       if (saved) {
-        return { ...INITIAL_STUDIO_CONFIG, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        return {
+          ...INITIAL_STUDIO_CONFIG,
+          ...parsed,
+          socials: {
+            ...INITIAL_STUDIO_CONFIG.socials,
+            ...(parsed.socials || {}),
+          },
+        };
       }
     } catch (e) {
       console.warn('Failed to load studio config:', e);
@@ -216,29 +243,21 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return INITIAL_STUDIO_CONFIG;
   });
 
-  // Save to localStorage on change
+  // Automatically save permanent user uploads when artworks change
   useEffect(() => {
-    try {
-      localStorage.setItem(ARTWORKS_STORAGE_KEY, JSON.stringify(artworks));
-    } catch (e) {
-      console.warn('Failed to save artworks (might exceed storage limit):', e);
-    }
+    const userOnly = artworks.filter((item) => item.isUserUploaded);
+    safeSetStorage(USER_UPLOADS_STORAGE_KEY, JSON.stringify(userOnly));
   }, [artworks]);
 
+  // Automatically sync rate tiers and config to permanent storage
   useEffect(() => {
-    try {
-      localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(rateTiers));
-    } catch (e) {
-      console.warn('Failed to save rate tiers:', e);
-    }
+    safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(rateTiers));
+    safeSetStorage(LEGACY_RATES_STORAGE_KEY, JSON.stringify(rateTiers));
   }, [rateTiers]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(studioConfig));
-    } catch (e) {
-      console.warn('Failed to save config:', e);
-    }
+    safeSetStorage(CONFIG_STORAGE_KEY, JSON.stringify(studioConfig));
+    safeSetStorage(LEGACY_CONFIG_STORAGE_KEY, JSON.stringify(studioConfig));
   }, [studioConfig]);
 
   // Smooth scroll to top when page changes
@@ -334,26 +353,65 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Rate actions
   const updateRateTier = (id: string, updates: Partial<RateTier>) => {
-    setRateTiers((prev) =>
-      prev.map((tier) => {
+    setRateTiers((prev) => {
+      const next = prev.map((tier) => {
         if (tier.id === id) {
           const updated = { ...tier, ...updates };
-          if ('imageUrl' in updates && (!updates.imageUrl || (typeof updates.imageUrl === 'string' && updates.imageUrl.trim() === ''))) {
+          if (
+            'imageUrl' in updates &&
+            (!updates.imageUrl ||
+              (typeof updates.imageUrl === 'string' && updates.imageUrl.trim() === ''))
+          ) {
             delete updated.imageUrl;
           }
           return updated;
         }
         return tier;
-      })
-    );
+      });
+      safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(next));
+      safeSetStorage(LEGACY_RATES_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const saveAllRateTiers = (newTiers: RateTier[]) => {
+    setRateTiers(newTiers);
+    safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(newTiers));
+    safeSetStorage(LEGACY_RATES_STORAGE_KEY, JSON.stringify(newTiers));
   };
 
   const resetRatesToDefaults = () => {
     setRateTiers(INITIAL_RATE_TIERS);
+    safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(INITIAL_RATE_TIERS));
+    safeSetStorage(LEGACY_RATES_STORAGE_KEY, JSON.stringify(INITIAL_RATE_TIERS));
   };
 
   const updateStudioConfig = (updates: Partial<StudioConfig>) => {
-    setStudioConfig((prev) => ({ ...prev, ...updates }));
+    setStudioConfig((prev) => {
+      const next = {
+        ...prev,
+        ...updates,
+        ...(updates.socials ? { socials: { ...prev.socials, ...updates.socials } } : {}),
+      };
+      safeSetStorage(CONFIG_STORAGE_KEY, JSON.stringify(next));
+      safeSetStorage(LEGACY_CONFIG_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const updateSocials = (socialsUpdate: Partial<StudioConfig['socials']>) => {
+    setStudioConfig((prev) => {
+      const next = {
+        ...prev,
+        socials: {
+          ...prev.socials,
+          ...socialsUpdate,
+        },
+      };
+      safeSetStorage(CONFIG_STORAGE_KEY, JSON.stringify(next));
+      safeSetStorage(LEGACY_CONFIG_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
   };
 
   // Modals state
@@ -508,9 +566,11 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateArtwork,
         rateTiers,
         updateRateTier,
+        saveAllRateTiers,
         resetRatesToDefaults,
         studioConfig,
         updateStudioConfig,
+        updateSocials,
         isUploadModalOpen,
         uploadModalCategory,
         uploadModalTargetTierId,

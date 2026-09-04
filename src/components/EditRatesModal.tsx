@@ -10,6 +10,7 @@ export const EditRatesModal: React.FC = () => {
     isEditRatesModalOpen,
     closeEditRatesModal,
     rateTiers,
+    saveAllRateTiers,
     updateRateTier,
     resetRatesToDefaults,
     studioConfig,
@@ -35,9 +36,7 @@ export const EditRatesModal: React.FC = () => {
   };
 
   const handleSaveAll = () => {
-    localTiers.forEach((tier) => {
-      updateRateTier(tier.id, tier);
-    });
+    saveAllRateTiers(localTiers);
     updateStudioConfig({
       commissionStatus: localStatus,
       slotsAvailable: localSlots,
