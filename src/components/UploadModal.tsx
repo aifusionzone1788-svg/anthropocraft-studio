@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GalleryCategory } from '../types';
 import { useStudio } from '../context/StudioContext';
 import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
-import { X, Upload, Check, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { X, Upload, Check, AlertCircle, Sparkles, Loader2, Image as ImageIcon } from 'lucide-react';
 import { compressImageFile } from '../utils/imageHelper';
 
 const CATEGORIES: GalleryCategory[] = [
@@ -20,12 +20,15 @@ export const UploadModal: React.FC = () => {
     closeUploadModal,
     uploadModalCategory,
     uploadModalTargetTierId,
+    uploadModalInitialImage,
+    uploadModalInitialTitle,
     addArtwork,
     updateRateTier,
   } = useStudio();
 
+  // All hooks MUST be declared unconditionally at top level
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<GalleryCategory>(uploadModalCategory || 'CHARACTER ART');
+  const [category, setCategory] = useState<GalleryCategory>('CHARACTER ART');
   const [aspectRatio, setAspectRatio] = useState<'portrait' | 'square' | 'tall' | 'wide'>('portrait');
   const [medium, setMedium] = useState('Digital Painting');
   const [year, setYear] = useState(new Date().getFullYear().toString());
@@ -33,28 +36,44 @@ export const UploadModal: React.FC = () => {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState('');
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync category if passed from trigger
-  React.useEffect(() => {
-    if (uploadModalCategory) {
-      setCategory(uploadModalCategory);
+  // Sync state whenever modal opens or initial values change
+  useEffect(() => {
+    if (isUploadModalOpen) {
+      setCategory(uploadModalCategory || 'CHARACTER ART');
+      if (uploadModalInitialImage) {
+        setImageDataUrl(uploadModalInitialImage);
+      }
+      if (uploadModalInitialTitle) {
+        setTitle(uploadModalInitialTitle);
+        setFileName(uploadModalInitialTitle);
+      }
+      setError('');
+    } else {
+      // Reset form on close
+      setTitle('');
+      setDescription('');
+      setImageDataUrl(null);
+      setFileName('');
+      setError('');
+      setIsCompressing(false);
+      setIsDragging(false);
     }
-  }, [uploadModalCategory]);
+  }, [isUploadModalOpen, uploadModalCategory, uploadModalInitialImage, uploadModalInitialTitle]);
 
-  if (!isUploadModalOpen) return null;
-
-  const [isCompressing, setIsCompressing] = useState(false);
-
-  const handleFile = async (file: File) => {
+  // Handle incoming file
+  const processFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file (PNG, JPG, WEBP).');
+      setError('Please select a valid image file (PNG, JPG, WEBP, GIF, SVG).');
       return;
     }
     setError('');
     setFileName(file.name);
     if (!title) {
-      setTitle(file.name.replace(/\.[^/.]+$/, '').toUpperCase());
+      setTitle(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').toUpperCase());
     }
 
     try {
@@ -68,21 +87,42 @@ export const UploadModal: React.FC = () => {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!imageDataUrl) {
-      setError('Please upload an image for this artwork slot.');
+      setError('Please select or drop an image file for this artwork before saving.');
       return;
     }
 
-    // Add to gallery
+    // Save artwork to persistent state
     addArtwork({
       title: title.trim() || 'UNTITLED PIECE',
       category,
@@ -93,24 +133,33 @@ export const UploadModal: React.FC = () => {
       description: description.trim(),
     });
 
-    // If target was a rate tier, optionally update its sample image
+    // If a rate tier was the target, update its sample art as well
     if (uploadModalTargetTierId) {
       updateRateTier(uploadModalTargetTierId, {
         imageUrl: imageDataUrl,
       });
     }
 
-    // Reset and close
-    setImageDataUrl(null);
-    setTitle('');
-    setDescription('');
     closeUploadModal();
   };
 
+  // Safe early exit AFTER all hooks have executed
+  if (!isUploadModalOpen) {
+    return null;
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/85 backdrop-blur-md">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) closeUploadModal();
+      }}
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby="upload-modal-title"
+    >
       <div
-        className="relative w-full max-w-2xl border border-white/10 bg-[#0c0c0c] p-6 sm:p-8 shadow-2xl transition-all"
+        className="relative w-full max-w-2xl border border-[#C5A059]/40 bg-[#121214] text-[#F5F5F5] p-6 sm:p-8 shadow-2xl shadow-black/80 my-auto transition-all"
         onClick={(e) => e.stopPropagation()}
       >
         <CornerCrosshairs color="border-[#C5A059]/60" />
@@ -119,81 +168,100 @@ export const UploadModal: React.FC = () => {
         <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
           <div className="flex items-center gap-2">
             <StarSparkle size="sm" variant="gold" />
-            <h3 className="font-display text-lg sm:text-xl font-bold tracking-wider text-[#F5F5F5] uppercase">
+            <h3
+              id="upload-modal-title"
+              className="font-display text-lg sm:text-xl font-bold tracking-wider text-[#F5F5F5] uppercase"
+            >
               UPLOAD ORIGINAL ARTWORK
             </h3>
           </div>
           <button
             type="button"
             onClick={closeUploadModal}
-            className="p-1 text-zinc-400 hover:text-[#F5F5F5] hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+            className="p-1.5 text-zinc-400 hover:text-[#F5F5F5] hover:bg-white/10 rounded transition-colors cursor-pointer"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Drag and Drop Box */}
+          {/* Interactive File Dropzone Area */}
           <div
-            onDragOver={(e) => e.preventDefault()}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`relative flex flex-col items-center justify-center border border-dashed p-6 sm:p-8 text-center cursor-pointer transition-all ${
-              imageDataUrl
-                ? 'border-[#C5A059]/60 bg-[#050505]'
-                : 'border-zinc-700 hover:border-[#C5A059] bg-[#050505]/60 hover:bg-[#050505]'
+            className={`relative flex flex-col items-center justify-center border-2 border-dashed p-6 sm:p-8 text-center transition-all min-h-[160px] ${
+              isDragging
+                ? 'border-[#C5A059] bg-[#C5A059]/10'
+                : imageDataUrl
+                ? 'border-[#C5A059]/60 bg-[#09090b]'
+                : 'border-zinc-700 hover:border-[#C5A059]/80 bg-[#09090b]/80 hover:bg-[#09090b]'
             }`}
           >
+            {/* Native file input that covers the entire dropzone so clicking directly opens file picker */}
             <input
               type="file"
               ref={fileInputRef}
-              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              onChange={handleFileChange}
               accept="image/*"
-              className="hidden"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              title="Click or drop an image file here"
             />
 
             {isCompressing ? (
-              <div className="flex flex-col items-center gap-3 py-6 text-[#C5A059]">
+              <div className="relative z-0 flex flex-col items-center gap-3 py-6 text-[#C5A059]">
                 <Loader2 className="w-8 h-8 animate-spin" />
-                <span className="font-mono text-xs tracking-wider uppercase">OPTIMIZING IMAGE FOR STORAGE...</span>
+                <span className="font-mono text-xs tracking-wider uppercase">
+                  OPTIMIZING IMAGE FOR LOCAL STORAGE...
+                </span>
               </div>
             ) : imageDataUrl ? (
-              <div className="relative flex flex-col items-center gap-3">
-                <div className="relative max-h-48 max-w-xs overflow-hidden border border-zinc-700">
+              <div className="relative z-0 flex flex-col items-center gap-3 w-full">
+                <div className="relative max-h-48 max-w-xs overflow-hidden border border-zinc-700 bg-black/60 shadow-lg">
                   <img
                     src={imageDataUrl}
                     alt="Preview"
                     className="max-h-48 w-auto object-contain"
                   />
                 </div>
-                <div className="flex items-center gap-2 text-xs text-[#C5A059]">
-                  <Check className="w-4 h-4" />
-                  <span>{fileName || 'Artwork Loaded'}</span>
+                <div className="flex items-center gap-2 text-xs text-[#C5A059] font-medium">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span className="truncate max-w-xs">{fileName || 'Artwork Ready'}</span>
                 </div>
-                <span className="text-[11px] text-zinc-400 underline">
-                  Click to choose a different image
-                </span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative z-20 text-xs text-zinc-400 hover:text-[#C5A059] underline cursor-pointer"
+                >
+                  Click here or drop to replace image
+                </button>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center border border-zinc-700 bg-zinc-900 text-zinc-300">
+              <div className="relative z-0 flex flex-col items-center gap-3 pointer-events-none">
+                <div className="flex h-12 w-12 items-center justify-center border border-zinc-700 bg-zinc-900/80 text-zinc-300">
                   <Upload className="w-5 h-5 text-[#C5A059]" />
                 </div>
                 <div className="space-y-1">
                   <p className="font-display text-sm font-bold tracking-wider text-[#F5F5F5]">
                     DROP ARTWORK HERE OR CLICK TO BROWSE
                   </p>
-                  <p className="text-xs text-zinc-500">
-                    Supports high-resolution PNG, JPG, WEBP (All original artwork stays local to your browser)
+                  <p className="text-xs text-zinc-400">
+                    PNG, JPG, WEBP, GIF, SVG (Stored locally in your browser)
                   </p>
                 </div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 mt-1 border border-[#C5A059]/40 bg-[#C5A059]/10 text-[#C5A059] text-[11px] font-mono tracking-wider">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  CHOOSE IMAGE FILE
+                </span>
               </div>
             )}
           </div>
 
+          {/* Validation error display */}
           {error && (
-            <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/30 border border-red-800/50 p-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-red-400 bg-red-950/40 border border-red-800/60 p-3">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
               <span>{error}</span>
             </div>
           )}
@@ -209,7 +277,7 @@ export const UploadModal: React.FC = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. LUMEN WOLF REF SHEET"
-                className="w-full bg-[#050505] border border-zinc-800 px-3 py-2 text-sm text-[#F5F5F5] placeholder:text-zinc-600 focus:border-[#C5A059] focus:outline-none"
+                className="w-full bg-[#050505] border border-zinc-700 px-3 py-2 text-sm text-[#F5F5F5] placeholder:text-zinc-600 focus:border-[#C5A059] focus:outline-none transition-colors"
               />
             </div>
 
@@ -220,7 +288,7 @@ export const UploadModal: React.FC = () => {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as GalleryCategory)}
-                className="w-full bg-[#050505] border border-zinc-800 px-3 py-2 text-sm text-[#F5F5F5] focus:border-[#C5A059] focus:outline-none"
+                className="w-full bg-[#050505] border border-zinc-700 px-3 py-2 text-sm text-[#F5F5F5] focus:border-[#C5A059] focus:outline-none cursor-pointer transition-colors"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -239,7 +307,7 @@ export const UploadModal: React.FC = () => {
               <select
                 value={aspectRatio}
                 onChange={(e) => setAspectRatio(e.target.value as any)}
-                className="w-full bg-[#050505] border border-zinc-800 px-3 py-2 text-sm text-[#F5F5F5] focus:border-[#C5A059] focus:outline-none"
+                className="w-full bg-[#050505] border border-zinc-700 px-3 py-2 text-sm text-[#F5F5F5] focus:border-[#C5A059] focus:outline-none cursor-pointer transition-colors"
               >
                 <option value="portrait">Portrait (4:5)</option>
                 <option value="square">Square (1:1)</option>
@@ -250,14 +318,14 @@ export const UploadModal: React.FC = () => {
 
             <div>
               <label className="block text-[11px] font-mono tracking-widest text-zinc-400 uppercase mb-1.5">
-                Medium / Tools
+                Medium / Technique
               </label>
               <input
                 type="text"
                 value={medium}
                 onChange={(e) => setMedium(e.target.value)}
                 placeholder="Digital Illustration"
-                className="w-full bg-[#050505] border border-zinc-800 px-3 py-2 text-sm text-[#F5F5F5] placeholder:text-zinc-600 focus:border-[#C5A059] focus:outline-none"
+                className="w-full bg-[#050505] border border-zinc-700 px-3 py-2 text-sm text-[#F5F5F5] placeholder:text-zinc-600 focus:border-[#C5A059] focus:outline-none transition-colors"
               />
             </div>
 
@@ -270,9 +338,22 @@ export const UploadModal: React.FC = () => {
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 placeholder="2026"
-                className="w-full bg-[#050505] border border-zinc-800 px-3 py-2 text-sm text-[#F5F5F5] placeholder:text-zinc-600 focus:border-[#C5A059] focus:outline-none"
+                className="w-full bg-[#050505] border border-zinc-700 px-3 py-2 text-sm text-[#F5F5F5] placeholder:text-zinc-600 focus:border-[#C5A059] focus:outline-none transition-colors"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-mono tracking-widest text-zinc-400 uppercase mb-1.5">
+              Artwork Notes / Description (Optional)
+            </label>
+            <textarea
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief artist notes, character species, or design highlights..."
+              className="w-full bg-[#050505] border border-zinc-700 px-3 py-2 text-sm text-[#F5F5F5] placeholder:text-zinc-600 focus:border-[#C5A059] focus:outline-none transition-colors resize-none"
+            />
           </div>
 
           {/* Action Buttons */}
@@ -280,16 +361,17 @@ export const UploadModal: React.FC = () => {
             <button
               type="button"
               onClick={closeUploadModal}
-              className="px-4 py-2 text-xs font-mono tracking-wider text-zinc-400 hover:text-[#F5F5F5] cursor-pointer"
+              className="px-4 py-2 text-xs font-mono tracking-wider text-zinc-400 hover:text-[#F5F5F5] hover:bg-white/5 transition-colors cursor-pointer"
             >
               CANCEL
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 bg-[#C5A059] text-[#050505] px-6 py-2.5 text-xs font-display font-bold tracking-[0.15em] uppercase hover:bg-[#d6b46f] transition-colors cursor-pointer"
+              disabled={isCompressing}
+              className="flex items-center gap-2 bg-[#C5A059] text-[#050505] px-6 py-2.5 text-xs font-display font-bold tracking-[0.15em] uppercase hover:bg-[#d6b46f] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#C5A059]/20"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              ADD TO STUDIO GALLERY
+              <span>ADD TO STUDIO GALLERY</span>
             </button>
           </div>
         </form>

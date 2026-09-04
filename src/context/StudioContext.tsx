@@ -19,7 +19,14 @@ interface StudioContextType {
   isUploadModalOpen: boolean;
   uploadModalCategory?: GalleryCategory;
   uploadModalTargetTierId?: string;
-  openUploadModal: (category?: GalleryCategory, targetTierId?: string) => void;
+  uploadModalInitialImage?: string;
+  uploadModalInitialTitle?: string;
+  openUploadModal: (
+    category?: GalleryCategory,
+    targetTierId?: string,
+    initialImage?: string,
+    initialTitle?: string
+  ) => void;
   closeUploadModal: () => void;
 
   isContactModalOpen: boolean;
@@ -353,10 +360,19 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadModalCategory, setUploadModalCategory] = useState<GalleryCategory | undefined>(undefined);
   const [uploadModalTargetTierId, setUploadModalTargetTierId] = useState<string | undefined>(undefined);
+  const [uploadModalInitialImage, setUploadModalInitialImage] = useState<string | undefined>(undefined);
+  const [uploadModalInitialTitle, setUploadModalInitialTitle] = useState<string | undefined>(undefined);
 
-  const openUploadModal = (category?: GalleryCategory, targetTierId?: string) => {
+  const openUploadModal = (
+    category?: GalleryCategory,
+    targetTierId?: string,
+    initialImage?: string,
+    initialTitle?: string
+  ) => {
     setUploadModalCategory(category);
     setUploadModalTargetTierId(targetTierId);
+    setUploadModalInitialImage(initialImage);
+    setUploadModalInitialTitle(initialTitle);
     setIsUploadModalOpen(true);
   };
 
@@ -364,6 +380,8 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsUploadModalOpen(false);
     setUploadModalCategory(undefined);
     setUploadModalTargetTierId(undefined);
+    setUploadModalInitialImage(undefined);
+    setUploadModalInitialTitle(undefined);
   };
 
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -496,6 +514,8 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isUploadModalOpen,
         uploadModalCategory,
         uploadModalTargetTierId,
+        uploadModalInitialImage,
+        uploadModalInitialTitle,
         openUploadModal,
         closeUploadModal,
         isContactModalOpen,

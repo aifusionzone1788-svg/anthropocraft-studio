@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useStudio } from '../context/StudioContext';
 import { GalleryCategory } from '../types';
 import { StarSparkle } from './DecorativeElements';
 import { ArtworkCard } from './ArtworkCard';
 import { Sparkles, Layers, Send, Upload } from 'lucide-react';
+import { compressImageFile } from '../utils/imageHelper';
 
 const CATEGORIES: GalleryCategory[] = [
   'ALL',
@@ -18,6 +19,25 @@ const CATEGORIES: GalleryCategory[] = [
 export const GalleryPage: React.FC = () => {
   const { artworks, openContactModal, isOwnerMode, openUploadModal } = useStudio();
   const [selectedCategory, setSelectedCategory] = useState<GalleryCategory>('ALL');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImageFile(file, 1600, 1600, 0.85);
+      const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').toUpperCase();
+      openUploadModal(
+        selectedCategory !== 'ALL' ? selectedCategory : undefined,
+        undefined,
+        compressed,
+        cleanTitle
+      );
+    } catch {
+      openUploadModal(selectedCategory !== 'ALL' ? selectedCategory : undefined);
+    }
+    e.target.value = '';
+  };
 
   // Filter artworks
   const filteredArtworks = selectedCategory === 'ALL'
@@ -50,15 +70,20 @@ export const GalleryPage: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             {isOwnerMode && (
-              <button
-                type="button"
-                onClick={() => openUploadModal(selectedCategory !== 'ALL' ? selectedCategory : undefined)}
-                className="flex items-center gap-2 border border-[#C5A059] bg-[#0c0c0e] text-[#C5A059] hover:bg-[#C5A059] hover:text-[#050505] px-5 py-3 text-xs font-display font-bold tracking-[0.15em] uppercase transition-all cursor-pointer shadow-lg shadow-[#C5A059]/10"
+              <label
+                className="relative flex items-center gap-2 border border-[#C5A059] bg-[#0c0c0e] text-[#C5A059] hover:bg-[#C5A059] hover:text-[#050505] px-5 py-3 text-xs font-display font-bold tracking-[0.15em] uppercase transition-all cursor-pointer shadow-lg shadow-[#C5A059]/10"
                 title="Owner Action: Upload New Artwork"
               >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleFileSelected}
+                  className="hidden"
+                />
                 <Upload className="w-4 h-4" />
                 <span>+ UPLOAD ARTWORK</span>
-              </button>
+              </label>
             )}
 
             <button

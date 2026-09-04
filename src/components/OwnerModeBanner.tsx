@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useStudio } from '../context/StudioContext';
 import {
   ShieldCheck,
@@ -7,6 +7,7 @@ import {
   KeyRound,
   Layers,
 } from 'lucide-react';
+import { compressImageFile } from '../utils/imageHelper';
 
 export const OwnerModeBanner: React.FC = () => {
   const {
@@ -17,6 +18,21 @@ export const OwnerModeBanner: React.FC = () => {
     setActivePage,
     activePage,
   } = useStudio();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const compressed = await compressImageFile(file, 1600, 1600, 0.85);
+      const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').toUpperCase();
+      openUploadModal(undefined, undefined, compressed, cleanTitle);
+    } catch {
+      openUploadModal();
+    }
+    e.target.value = '';
+  };
 
   if (!isOwnerMode) return null;
 
@@ -41,14 +57,20 @@ export const OwnerModeBanner: React.FC = () => {
 
         {/* Right: Quick Action Controls */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => openUploadModal()}
+          <label
             className="flex items-center gap-1.5 bg-[#C5A059] text-[#050505] px-3 py-1 text-[10px] font-display font-bold tracking-widest uppercase hover:bg-[#d6b46f] transition-all cursor-pointer shadow-sm"
+            title="Owner Action: Upload New Artwork"
           >
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
             <Upload className="w-3 h-3" />
             <span>UPLOAD ARTWORK</span>
-          </button>
+          </label>
 
           {activePage !== 'gallery' && (
             <button
