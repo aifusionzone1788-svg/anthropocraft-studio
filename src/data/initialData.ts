@@ -131,7 +131,7 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
   {
     id: 'character-art',
     title: 'CHARACTER ART',
-    price: '$120+',
+    price: '$200 To $1000',
     subtitle: 'Standalone Character Focus',
     description: 'A fully rendered expressive character piece with dynamic posing, rich material rendering, and subtle atmospheric backdrop.',
     turnaround: '2 - 3 Weeks',
@@ -146,7 +146,7 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
   {
     id: 'portraits-icons',
     title: 'PORTRAITS & HEADSHOTS',
-    price: '$65+',
+    price: '$200 To $1000',
     subtitle: 'Expressive Bust & Iconography',
     description: 'Focused close-up character portrait emphasizing emotive facial expression, eye detail, fur texturing, and clean framing.',
     turnaround: '1 - 2 Weeks',
@@ -160,7 +160,7 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
   {
     id: 'full-body-art',
     title: 'FULL-BODY ART',
-    price: '$160+',
+    price: '$300 To $1000+',
     subtitle: 'Complete Silhouette & Outfit',
     description: 'Full anatomical coverage showcasing costume details, props, complex markings, dynamic action, or relaxed resting pose.',
     turnaround: '2 - 4 Weeks',
@@ -174,7 +174,7 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
   {
     id: 'reference-sheet',
     title: 'REFERENCE SHEET',
-    price: '$220+',
+    price: '$300 To $1000+',
     subtitle: 'Comprehensive Character Guide',
     description: 'The definitive architectural guide for your character or fursona, including multi-angle turnaround views, color swatches, eye callouts, and apparel options.',
     turnaround: '3 - 5 Weeks',
@@ -188,7 +188,7 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
   {
     id: 'mascot-design',
     title: 'MASCOT DESIGN',
-    price: '$280+',
+    price: '$250 To $800',
     subtitle: 'Brand & Community Mascot Identity',
     description: 'Original character creation tailored for streaming, merchandise, convention badges, or community branding with full vector/raster versatility.',
     turnaround: '3 - 6 Weeks',
@@ -202,7 +202,7 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
   {
     id: 'custom-commission',
     title: 'CUSTOM COMMISSION',
-    price: 'CUSTOM QUOTE',
+    price: '$200 To $1000+',
     subtitle: 'Complex Multi-Character & Scene',
     description: 'Bespoke large-scale compositions, complex cinematic backgrounds, multi-character interactions, or custom artbook illustrations.',
     turnaround: 'Flexible / Based on Scope',

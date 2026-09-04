@@ -25,7 +25,7 @@ export interface Artwork {
 export interface RateTier {
   id: string;
   title: string;
-  price: string; // e.g. "[ADD PRICE]" or "$120"
+  price: string; // e.g. "$200 To $1000" or "$300 To $1000+"
   subtitle?: string;
   description: string;
   turnaround?: string;

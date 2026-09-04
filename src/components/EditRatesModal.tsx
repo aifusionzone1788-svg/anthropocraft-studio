@@ -139,7 +139,7 @@ export const EditRatesModal: React.FC = () => {
 
                 <div className="sm:col-span-1">
                   <label className="block text-[10px] font-mono tracking-widest text-zinc-400 uppercase mb-1">
-                    PRICE (e.g. $120+ or [ADD PRICE])
+                    PRICE (e.g. $200 To $1000)
                   </label>
                   <input
                     type="text"

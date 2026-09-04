@@ -60,10 +60,17 @@ const StudioContext = createContext<StudioContextType | undefined>(undefined);
 const ARTWORKS_STORAGE_KEY = 'anthrocraft_artworks_v1';
 const USER_UPLOADS_STORAGE_KEY = 'anthrocraft_user_artworks_permanent_v1';
 const DELETED_ARTWORKS_STORAGE_KEY = 'anthrocraft_deleted_artworks_ids_v1';
-const RATES_STORAGE_KEY = 'anthrocraft_rates_permanent_v2';
-const LEGACY_RATES_STORAGE_KEY = 'anthrocraft_rates_v1';
-const CONFIG_STORAGE_KEY = 'anthrocraft_config_permanent_v2';
-const LEGACY_CONFIG_STORAGE_KEY = 'anthrocraft_config_v1';
+const RATES_STORAGE_KEY = 'anthrocraft_rates_permanent_v3';
+const LEGACY_RATES_STORAGE_KEYS = [
+  'anthrocraft_rates_permanent_v2',
+  'anthrocraft_rates_v1',
+];
+const CONFIG_STORAGE_KEY = 'anthrocraft_config_permanent_v3';
+const LEGACY_CONFIG_STORAGE_KEYS = [
+  'anthrocraft_config_permanent_v2',
+  'anthrocraft_config_v1',
+];
+const GLOBAL_SYNC_VERSION_KEY = 'anthrocraft_rates_sync_v3_2026';
 const OWNER_MODE_STORAGE_KEY = 'anthrocraft_owner_mode_active';
 const OWNER_PIN_STORAGE_KEY = 'anthrocraft_owner_pin_code';
 
@@ -83,6 +90,18 @@ function safeSetStorage(key: string, value: string) {
       }
     }
   }
+}
+
+function syncRatesToAllStorage(tiers: RateTier[]) {
+  const serialized = JSON.stringify(tiers);
+  safeSetStorage(RATES_STORAGE_KEY, serialized);
+  LEGACY_RATES_STORAGE_KEYS.forEach((k) => safeSetStorage(k, serialized));
+}
+
+function syncConfigToAllStorage(config: StudioConfig) {
+  const serialized = JSON.stringify(config);
+  safeSetStorage(CONFIG_STORAGE_KEY, serialized);
+  LEGACY_CONFIG_STORAGE_KEYS.forEach((k) => safeSetStorage(k, serialized));
 }
 
 export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -173,12 +192,27 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   });
 
-  // Load rate tiers from permanent storage
+  // Load rate tiers from permanent storage and automatically overwrite legacy default rates
   const [rateTiers, setRateTiers] = useState<RateTier[]>(() => {
     try {
+      const isSynced = localStorage.getItem(GLOBAL_SYNC_VERSION_KEY) === 'synced_v3';
       const saved =
         localStorage.getItem(RATES_STORAGE_KEY) ||
-        localStorage.getItem(LEGACY_RATES_STORAGE_KEY);
+        localStorage.getItem('anthrocraft_rates_permanent_v2') ||
+        localStorage.getItem('anthrocraft_rates_v1');
+
+      // Set of old rates that should be automatically overwritten for all visitors
+      const legacyDefaultPrices = new Set([
+        '$120+', '$120',
+        '$65+', '$65',
+        '$160+', '$160',
+        '$220+', '$220',
+        '$280+', '$280',
+        'CUSTOM QUOTE',
+        '[ADD PRICE]',
+        'INQUIRE FOR QUOTE',
+      ]);
+
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -189,18 +223,31 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }
           });
 
-          // Overlay user edits over initial rate tiers, preserving all custom prices, deliverables, and options
+          // Overlay user edits over initial rate tiers, overwriting legacy default rates
           const mergedTiers: RateTier[] = INITIAL_RATE_TIERS.map((defaultTier) => {
             const userEdit = userTierMap.get(defaultTier.id);
             if (userEdit) {
               userTierMap.delete(defaultTier.id);
+
+              const hasLegacyPrice =
+                !userEdit.price ||
+                legacyDefaultPrices.has(userEdit.price.trim()) ||
+                legacyDefaultPrices.has(userEdit.price.trim().toUpperCase()) ||
+                !isSynced;
+
+              const effectivePrice = hasLegacyPrice ? defaultTier.price : userEdit.price;
+
               return {
                 ...defaultTier,
                 ...userEdit,
+                price: effectivePrice,
+                // Ensure deliverables match updated defaults if user deliverables are empty
                 deliverables:
                   Array.isArray(userEdit.deliverables) && userEdit.deliverables.length > 0
                     ? userEdit.deliverables
                     : defaultTier.deliverables,
+                // Preserve custom uploaded artwork sample image
+                imageUrl: userEdit.imageUrl || defaultTier.imageUrl,
               };
             }
             return defaultTier;
@@ -211,24 +258,30 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             mergedTiers.push(customTier);
           });
 
+          syncRatesToAllStorage(mergedTiers);
+          safeSetStorage(GLOBAL_SYNC_VERSION_KEY, 'synced_v3');
           return mergedTiers;
         }
       }
     } catch (e) {
-      console.warn('Failed to load permanent rate tiers:', e);
+      console.warn('Failed to load permanent rate tiers, falling back to INITIAL_RATE_TIERS:', e);
     }
+
+    syncRatesToAllStorage(INITIAL_RATE_TIERS);
+    safeSetStorage(GLOBAL_SYNC_VERSION_KEY, 'synced_v3');
     return INITIAL_RATE_TIERS;
   });
 
-  // Load studio config and contact handles from permanent storage
+  // Load studio config and contact handles from permanent storage, ensuring global default contacts match
   const [studioConfig, setStudioConfig] = useState<StudioConfig>(() => {
     try {
       const saved =
         localStorage.getItem(CONFIG_STORAGE_KEY) ||
-        localStorage.getItem(LEGACY_CONFIG_STORAGE_KEY);
+        localStorage.getItem('anthrocraft_config_permanent_v2') ||
+        localStorage.getItem('anthrocraft_config_v1');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return {
+        const mergedConfig: StudioConfig = {
           ...INITIAL_STUDIO_CONFIG,
           ...parsed,
           socials: {
@@ -236,10 +289,19 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...(parsed.socials || {}),
           },
         };
+        // Ensure non-empty active social defaults
+        if (!mergedConfig.socials.discord) mergedConfig.socials.discord = INITIAL_STUDIO_CONFIG.socials.discord;
+        if (!mergedConfig.socials.twitter) mergedConfig.socials.twitter = INITIAL_STUDIO_CONFIG.socials.twitter;
+        if (!mergedConfig.socials.instagram) mergedConfig.socials.instagram = INITIAL_STUDIO_CONFIG.socials.instagram;
+        if (!mergedConfig.socials.email) mergedConfig.socials.email = INITIAL_STUDIO_CONFIG.socials.email;
+
+        syncConfigToAllStorage(mergedConfig);
+        return mergedConfig;
       }
     } catch (e) {
       console.warn('Failed to load studio config:', e);
     }
+    syncConfigToAllStorage(INITIAL_STUDIO_CONFIG);
     return INITIAL_STUDIO_CONFIG;
   });
 
@@ -251,13 +313,11 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Automatically sync rate tiers and config to permanent storage
   useEffect(() => {
-    safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(rateTiers));
-    safeSetStorage(LEGACY_RATES_STORAGE_KEY, JSON.stringify(rateTiers));
+    syncRatesToAllStorage(rateTiers);
   }, [rateTiers]);
 
   useEffect(() => {
-    safeSetStorage(CONFIG_STORAGE_KEY, JSON.stringify(studioConfig));
-    safeSetStorage(LEGACY_CONFIG_STORAGE_KEY, JSON.stringify(studioConfig));
+    syncConfigToAllStorage(studioConfig);
   }, [studioConfig]);
 
   // Smooth scroll to top when page changes
@@ -368,22 +428,19 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
         return tier;
       });
-      safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(next));
-      safeSetStorage(LEGACY_RATES_STORAGE_KEY, JSON.stringify(next));
+      syncRatesToAllStorage(next);
       return next;
     });
   };
 
   const saveAllRateTiers = (newTiers: RateTier[]) => {
     setRateTiers(newTiers);
-    safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(newTiers));
-    safeSetStorage(LEGACY_RATES_STORAGE_KEY, JSON.stringify(newTiers));
+    syncRatesToAllStorage(newTiers);
   };
 
   const resetRatesToDefaults = () => {
     setRateTiers(INITIAL_RATE_TIERS);
-    safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(INITIAL_RATE_TIERS));
-    safeSetStorage(LEGACY_RATES_STORAGE_KEY, JSON.stringify(INITIAL_RATE_TIERS));
+    syncRatesToAllStorage(INITIAL_RATE_TIERS);
   };
 
   const updateStudioConfig = (updates: Partial<StudioConfig>) => {
@@ -393,8 +450,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         ...updates,
         ...(updates.socials ? { socials: { ...prev.socials, ...updates.socials } } : {}),
       };
-      safeSetStorage(CONFIG_STORAGE_KEY, JSON.stringify(next));
-      safeSetStorage(LEGACY_CONFIG_STORAGE_KEY, JSON.stringify(next));
+      syncConfigToAllStorage(next);
       return next;
     });
   };
@@ -408,8 +464,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           ...socialsUpdate,
         },
       };
-      safeSetStorage(CONFIG_STORAGE_KEY, JSON.stringify(next));
-      safeSetStorage(LEGACY_CONFIG_STORAGE_KEY, JSON.stringify(next));
+      syncConfigToAllStorage(next);
       return next;
     });
   };
