@@ -6,6 +6,8 @@ import {
   LogOut,
   KeyRound,
   Layers,
+  RefreshCw,
+  CheckCheck,
 } from 'lucide-react';
 import { compressImageFile } from '../utils/imageHelper';
 
@@ -17,6 +19,8 @@ export const OwnerModeBanner: React.FC = () => {
     openAuthModal,
     setActivePage,
     activePage,
+    syncStatus,
+    syncToCoreSource,
   } = useStudio();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,17 +46,39 @@ export const OwnerModeBanner: React.FC = () => {
       className="sticky top-0 z-50 w-full border-b border-[#C5A059]/40 bg-[#0c0c0e]/95 backdrop-blur-md px-4 sm:px-8 py-2 text-xs transition-all shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
     >
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
-        {/* Left: Mode Badge */}
-        <div className="flex items-center gap-2.5">
+        {/* Left: Mode Badge & Sync Indicator */}
+        <div className="flex items-center flex-wrap gap-2.5">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           <div className="flex items-center gap-1.5 text-[11px] font-mono tracking-wider text-[#C5A059] font-bold uppercase">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>OWNER MODE ACTIVE</span>
           </div>
           <span className="text-zinc-600 hidden sm:inline">//</span>
-          <span className="text-[10px] font-mono text-zinc-400 hidden sm:inline">
-            Management & Upload Controls Unlocked
-          </span>
+          
+          {/* Core Dataset Sync Status */}
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono">
+            {syncStatus === 'syncing' ? (
+              <span className="flex items-center gap-1 text-amber-400">
+                <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                <span>SAVING TO INITIALDATA.TS...</span>
+              </span>
+            ) : syncStatus === 'synced' ? (
+              <span className="flex items-center gap-1 text-emerald-400">
+                <CheckCheck className="w-3 h-3" />
+                <span>INITIALDATA.TS SYNCED</span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => syncToCoreSource()}
+                className="flex items-center gap-1 text-zinc-400 hover:text-[#C5A059] transition-colors"
+                title="Persist current state directly to initialData.ts defaults"
+              >
+                <RefreshCw className="w-2.5 h-2.5" />
+                <span>SYNC TO CORE SOURCE</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Right: Quick Action Controls */}

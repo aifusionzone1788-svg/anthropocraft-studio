@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { Artwork, GalleryCategory, PageType, RateTier, StudioConfig } from '../types';
-import { INITIAL_ARTWORKS, INITIAL_RATE_TIERS, INITIAL_STUDIO_CONFIG } from '../data/initialData';
+import {
+  INITIAL_ARTWORKS,
+  INITIAL_RATE_TIERS,
+  INITIAL_STUDIO_CONFIG,
+  INITIAL_CONTACTS,
+  INITIAL_DATA_VERSION,
+} from '../data/initialData';
 
 interface StudioContextType {
   activePage: PageType;
@@ -17,6 +23,15 @@ interface StudioContextType {
   updateStudioConfig: (updates: Partial<StudioConfig>) => void;
   updateSocials: (socials: Partial<StudioConfig['socials']>) => void;
   
+  // Core Source Synchronization & Cache Invalidation
+  syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
+  lastSyncedAt: number | null;
+  syncToCoreSource: (override?: {
+    rateTiers?: RateTier[];
+    studioConfig?: StudioConfig;
+    artworks?: Artwork[];
+  }) => Promise<boolean>;
+
   // Modals & Triggers
   isUploadModalOpen: boolean;
   uploadModalCategory?: GalleryCategory;
@@ -57,39 +72,48 @@ interface StudioContextType {
 
 const StudioContext = createContext<StudioContextType | undefined>(undefined);
 
-const ARTWORKS_STORAGE_KEY = 'anthrocraft_artworks_v1';
-const USER_UPLOADS_STORAGE_KEY = 'anthrocraft_user_artworks_permanent_v1';
-const DELETED_ARTWORKS_STORAGE_KEY = 'anthrocraft_deleted_artworks_ids_v1';
-const RATES_STORAGE_KEY = 'anthrocraft_rates_permanent_v3';
-const LEGACY_RATES_STORAGE_KEYS = [
-  'anthrocraft_rates_permanent_v2',
-  'anthrocraft_rates_v1',
-];
-const CONFIG_STORAGE_KEY = 'anthrocraft_config_permanent_v3';
-const LEGACY_CONFIG_STORAGE_KEYS = [
-  'anthrocraft_config_permanent_v2',
-  'anthrocraft_config_v1',
-];
-const GLOBAL_SYNC_VERSION_KEY = 'anthrocraft_rates_sync_v3_2026';
+const CORE_VERSION_STORAGE_KEY = 'anthrocraft_active_core_version';
+const RATES_STORAGE_KEY = 'anthrocraft_rates_v7';
+const CONFIG_STORAGE_KEY = 'anthrocraft_config_v7';
+const USER_UPLOADS_STORAGE_KEY = 'anthrocraft_user_artworks_v7';
+const DELETED_ARTWORKS_STORAGE_KEY = 'anthrocraft_deleted_artworks_v7';
 const OWNER_MODE_STORAGE_KEY = 'anthrocraft_owner_mode_active';
 const OWNER_PIN_STORAGE_KEY = 'anthrocraft_owner_pin_code';
+
+const ALL_LEGACY_KEYS = [
+  'anthrocraft_artworks_v1',
+  'anthrocraft_artworks',
+  'anthrocraft_rates_permanent_v3',
+  'anthrocraft_rates_permanent_v2',
+  'anthrocraft_rates_v1',
+  'anthrocraft_rates_v4',
+  'anthrocraft_rates_v5',
+  'anthrocraft_rates_v6',
+  'anthrocraft_config_permanent_v3',
+  'anthrocraft_config_permanent_v2',
+  'anthrocraft_config_v1',
+  'anthrocraft_config_v4',
+  'anthrocraft_config_v5',
+  'anthrocraft_config_v6',
+  'anthrocraft_user_artworks_v5',
+  'anthrocraft_user_artworks_v6',
+  'anthrocraft_deleted_artworks_v5',
+  'anthrocraft_deleted_artworks_v6',
+  'anthrocraft_rates_sync_v3_2026',
+  'anthrocraft_artworks_blank_init_v2',
+  'anthrocraft_master_version_stamp_v5',
+  'anthrocraft_master_version_stamp_v6',
+  'anthrocraft_app_master_version',
+];
 
 // Resilient localStorage setter with automatic cache eviction on quota pressure
 function safeSetStorage(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
   } catch (e: any) {
-    // If browser hits storage limits, clear redundant legacy keys and retry
     if (e?.name === 'QuotaExceededError' || e?.code === 22) {
       try {
-        [
-          ARTWORKS_STORAGE_KEY,
-          'anthrocraft_artworks',
-          'anthrocraft_rates_permanent_v2',
-          'anthrocraft_rates_v1',
-          'anthrocraft_config_permanent_v2',
-          'anthrocraft_config_v1',
-        ].forEach((k) => {
+        ALL_LEGACY_KEYS.forEach((k) => {
           if (k !== key) {
             try { localStorage.removeItem(k); } catch (_) {}
           }
@@ -104,23 +128,13 @@ function safeSetStorage(key: string, value: string) {
   }
 }
 
-function syncRatesToAllStorage(tiers: RateTier[]) {
-  const serialized = JSON.stringify(tiers);
-  safeSetStorage(RATES_STORAGE_KEY, serialized);
-  LEGACY_RATES_STORAGE_KEYS.forEach((k) => {
-    try { localStorage.removeItem(k); } catch (_) {}
-  });
+function syncRatesToStorage(tiers: RateTier[]) {
+  safeSetStorage(RATES_STORAGE_KEY, JSON.stringify(tiers));
 }
 
-function syncConfigToAllStorage(config: StudioConfig) {
-  const serialized = JSON.stringify(config);
-  safeSetStorage(CONFIG_STORAGE_KEY, serialized);
-  LEGACY_CONFIG_STORAGE_KEYS.forEach((k) => {
-    try { localStorage.removeItem(k); } catch (_) {}
-  });
+function syncConfigToStorage(config: StudioConfig) {
+  safeSetStorage(CONFIG_STORAGE_KEY, JSON.stringify(config));
 }
-
-const ARTWORKS_BLANK_CLEARED_VERSION_KEY = 'anthrocraft_artworks_blank_init_v2';
 
 const LEGACY_SAMPLE_IDS = new Set([
   'art-fenrir',
@@ -159,24 +173,83 @@ function isLegacySampleArtwork(item: any): boolean {
   return false;
 }
 
+// Global client initialization: purge all legacy cache on first load so every visitor on any device gets source defaults
+function purgeLegacyCachesAndInitialize() {
+  if (typeof window === 'undefined') return;
+  try {
+    const isCurrent = localStorage.getItem(CORE_VERSION_STORAGE_KEY) === INITIAL_DATA_VERSION;
+    if (!isCurrent) {
+      // Rescue legitimate user-uploaded artwork if any exists in prior keys
+      let rescuedUploads: Artwork[] = [];
+      const priorUploadKeys = [
+        USER_UPLOADS_STORAGE_KEY,
+        'anthrocraft_user_artworks_v6',
+        'anthrocraft_user_artworks_v5',
+        'anthrocraft_user_artworks_v4',
+        'anthrocraft_user_artworks_permanent_v1',
+      ];
+      for (const k of priorUploadKeys) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              const genuine = parsed.filter(
+                (item) => item && item.id && item.isUserUploaded === true && !isLegacySampleArtwork(item)
+              );
+              if (genuine.length > 0) {
+                rescuedUploads = genuine;
+                break;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Evict all legacy keys from visitor storage
+      ALL_LEGACY_KEYS.forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+        } catch (_) {}
+      });
+
+      // Save rescued uploads or start completely clean
+      if (rescuedUploads.length > 0) {
+        try {
+          localStorage.setItem(USER_UPLOADS_STORAGE_KEY, JSON.stringify(rescuedUploads));
+        } catch (_) {}
+      } else {
+        try {
+          localStorage.removeItem(USER_UPLOADS_STORAGE_KEY);
+        } catch (_) {}
+      }
+
+      // Seed canonical hardcoded rate sheets and studio config defaults
+      try {
+        localStorage.setItem(RATES_STORAGE_KEY, JSON.stringify(INITIAL_RATE_TIERS));
+        localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(INITIAL_STUDIO_CONFIG));
+      } catch (_) {}
+
+      // Stamp master release version
+      try {
+        localStorage.setItem(CORE_VERSION_STORAGE_KEY, INITIAL_DATA_VERSION);
+      } catch (_) {}
+    }
+  } catch (err) {
+    console.warn('Initial cache purge error:', err);
+  }
+}
+
+// Run immediately upon script load
+purgeLegacyCachesAndInitialize();
+
 export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activePage, setActivePageState] = useState<PageType>('home');
   
-  // Load artworks, clearing all legacy sample placeholders so the gallery starts completely blank
+  // Load artworks directly from hardcoded source defaults (INITIAL_ARTWORKS) combined with any owner uploads
   const [artworks, setArtworks] = useState<Artwork[]>(() => {
     try {
-      // 1. One-time legacy cache wipe: ensure old sample artworks are completely purged from visitors' caches
-      try {
-        localStorage.removeItem(ARTWORKS_STORAGE_KEY);
-        localStorage.removeItem('anthrocraft_artworks');
-        localStorage.removeItem('anthrocraft_rates_permanent_v2');
-        localStorage.removeItem('anthrocraft_rates_v1');
-        localStorage.removeItem('anthrocraft_config_permanent_v2');
-        localStorage.removeItem('anthrocraft_config_v1');
-        localStorage.setItem(ARTWORKS_BLANK_CLEARED_VERSION_KEY, 'synced_blank_v2');
-      } catch (_) {}
-
-      // 2. Manually deleted artwork IDs
+      // 1. Manually deleted artwork IDs (if owner deleted any item)
       let deletedIds: string[] = [];
       try {
         const deletedRaw = localStorage.getItem(DELETED_ARTWORKS_STORAGE_KEY);
@@ -190,7 +263,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.warn('Failed to parse deleted artwork IDs:', e);
       }
 
-      // 3. Inspect permanent user uploads and strip any legacy sample placeholders
+      // 2. Inspect user uploads from owner mode
       let userUploads: Artwork[] = [];
       try {
         const userSaved = localStorage.getItem(USER_UPLOADS_STORAGE_KEY);
@@ -198,48 +271,36 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const parsed = JSON.parse(userSaved);
           if (Array.isArray(parsed)) {
             userUploads = parsed
-              .filter((item) => !isLegacySampleArtwork(item) && item.isUserUploaded === true)
+              .filter((item) => item && !isLegacySampleArtwork(item) && item.isUserUploaded === true)
               .map((item) => ({ ...item, isUserUploaded: true }));
           }
         }
       } catch (e) {
-        console.warn('Failed to parse permanent user uploaded artworks:', e);
+        console.warn('Failed to parse user uploaded artworks:', e);
       }
 
-      // Filter out any user uploads that were explicitly deleted
+      // Filter out user uploads that were explicitly deleted
       userUploads = userUploads.filter((item) => !deletedIds.includes(item.id));
-
-      // Persist cleaned user uploads back to permanent storage
       safeSetStorage(USER_UPLOADS_STORAGE_KEY, JSON.stringify(userUploads));
 
-      return userUploads;
+      // Filter initial source artworks that were not explicitly deleted
+      const initialRemaining = INITIAL_ARTWORKS.filter((item) => !deletedIds.includes(item.id));
+
+      // Combine user uploads on top, followed by source default artworks (preventing duplicates)
+      const userIds = new Set(userUploads.map((item) => item.id));
+      const combined = [...userUploads, ...initialRemaining.filter((item) => !userIds.has(item.id))];
+
+      return combined.length > 0 ? combined : INITIAL_ARTWORKS;
     } catch (e) {
-      console.warn('Failed to initialize and clean artworks:', e);
-      return [];
+      console.warn('Failed to initialize artworks, using INITIAL_ARTWORKS:', e);
+      return INITIAL_ARTWORKS;
     }
   });
 
-  // Load rate tiers from permanent storage and automatically overwrite legacy default rates
+  // Load rate tiers initialized from hardcoded source defaults (INITIAL_RATE_TIERS)
   const [rateTiers, setRateTiers] = useState<RateTier[]>(() => {
     try {
-      const isSynced = localStorage.getItem(GLOBAL_SYNC_VERSION_KEY) === 'synced_v3';
-      const saved =
-        localStorage.getItem(RATES_STORAGE_KEY) ||
-        localStorage.getItem('anthrocraft_rates_permanent_v2') ||
-        localStorage.getItem('anthrocraft_rates_v1');
-
-      // Set of old rates that should be automatically overwritten for all visitors
-      const legacyDefaultPrices = new Set([
-        '$120+', '$120',
-        '$65+', '$65',
-        '$160+', '$160',
-        '$220+', '$220',
-        '$280+', '$280',
-        'CUSTOM QUOTE',
-        '[ADD PRICE]',
-        'INQUIRE FOR QUOTE',
-      ]);
-
+      const saved = localStorage.getItem(RATES_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -250,30 +311,19 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }
           });
 
-          // Overlay user edits over initial rate tiers, overwriting legacy default rates
+          // Overlay onto INITIAL_RATE_TIERS
           const mergedTiers: RateTier[] = INITIAL_RATE_TIERS.map((defaultTier) => {
             const userEdit = userTierMap.get(defaultTier.id);
             if (userEdit) {
               userTierMap.delete(defaultTier.id);
-
-              const hasLegacyPrice =
-                !userEdit.price ||
-                legacyDefaultPrices.has(userEdit.price.trim()) ||
-                legacyDefaultPrices.has(userEdit.price.trim().toUpperCase()) ||
-                !isSynced;
-
-              const effectivePrice = hasLegacyPrice ? defaultTier.price : userEdit.price;
-
               return {
                 ...defaultTier,
                 ...userEdit,
-                price: effectivePrice,
-                // Ensure deliverables match updated defaults if user deliverables are empty
+                price: userEdit.price && userEdit.price.trim() !== '' ? userEdit.price : defaultTier.price,
                 deliverables:
                   Array.isArray(userEdit.deliverables) && userEdit.deliverables.length > 0
                     ? userEdit.deliverables
                     : defaultTier.deliverables,
-                // Preserve custom uploaded artwork sample image
                 imageUrl: userEdit.imageUrl || defaultTier.imageUrl,
               };
             }
@@ -285,27 +335,22 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             mergedTiers.push(customTier);
           });
 
-          syncRatesToAllStorage(mergedTiers);
-          safeSetStorage(GLOBAL_SYNC_VERSION_KEY, 'synced_v3');
+          syncRatesToStorage(mergedTiers);
           return mergedTiers;
         }
       }
     } catch (e) {
-      console.warn('Failed to load permanent rate tiers, falling back to INITIAL_RATE_TIERS:', e);
+      console.warn('Failed to load rate tiers, falling back to INITIAL_RATE_TIERS:', e);
     }
 
-    syncRatesToAllStorage(INITIAL_RATE_TIERS);
-    safeSetStorage(GLOBAL_SYNC_VERSION_KEY, 'synced_v3');
+    syncRatesToStorage(INITIAL_RATE_TIERS);
     return INITIAL_RATE_TIERS;
   });
 
-  // Load studio config and contact handles from permanent storage, ensuring global default contacts match
+  // Load studio config and contact handles initialized from hardcoded source defaults (INITIAL_STUDIO_CONFIG)
   const [studioConfig, setStudioConfig] = useState<StudioConfig>(() => {
     try {
-      const saved =
-        localStorage.getItem(CONFIG_STORAGE_KEY) ||
-        localStorage.getItem('anthrocraft_config_permanent_v2') ||
-        localStorage.getItem('anthrocraft_config_v1');
+      const saved = localStorage.getItem(CONFIG_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         const mergedConfig: StudioConfig = {
@@ -316,19 +361,18 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...(parsed.socials || {}),
           },
         };
-        // Ensure non-empty active social defaults
         if (!mergedConfig.socials.discord) mergedConfig.socials.discord = INITIAL_STUDIO_CONFIG.socials.discord;
         if (!mergedConfig.socials.twitter) mergedConfig.socials.twitter = INITIAL_STUDIO_CONFIG.socials.twitter;
         if (!mergedConfig.socials.instagram) mergedConfig.socials.instagram = INITIAL_STUDIO_CONFIG.socials.instagram;
         if (!mergedConfig.socials.email) mergedConfig.socials.email = INITIAL_STUDIO_CONFIG.socials.email;
 
-        syncConfigToAllStorage(mergedConfig);
+        syncConfigToStorage(mergedConfig);
         return mergedConfig;
       }
     } catch (e) {
       console.warn('Failed to load studio config:', e);
     }
-    syncConfigToAllStorage(INITIAL_STUDIO_CONFIG);
+    syncConfigToStorage(INITIAL_STUDIO_CONFIG);
     return INITIAL_STUDIO_CONFIG;
   });
 
@@ -340,12 +384,111 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Automatically sync rate tiers and config to permanent storage
   useEffect(() => {
-    syncRatesToAllStorage(rateTiers);
+    syncRatesToStorage(rateTiers);
   }, [rateTiers]);
 
   useEffect(() => {
-    syncConfigToAllStorage(studioConfig);
+    syncConfigToStorage(studioConfig);
   }, [studioConfig]);
+
+  // Core Source Synchronization State & API sync
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+
+  // Sync state directly to server and export into src/data/initialData.ts
+  const syncToCoreSource = useCallback(
+    async (override?: {
+      rateTiers?: RateTier[];
+      studioConfig?: StudioConfig;
+      artworks?: Artwork[];
+    }): Promise<boolean> => {
+      const payload = {
+        rateTiers: override?.rateTiers ?? rateTiers,
+        studioConfig: override?.studioConfig ?? studioConfig,
+        artworks: override?.artworks ?? artworks,
+      };
+
+      try {
+        setSyncStatus('syncing');
+        const res = await fetch('/api/sync-initial-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.version) {
+            localStorage.setItem(CORE_VERSION_STORAGE_KEY, data.version);
+          }
+          setSyncStatus('synced');
+          setLastSyncedAt(Date.now());
+          console.log(`[AnthroCraft] Successfully synced and persisted to core initialData.ts (${data.version})`);
+          return true;
+        } else {
+          setSyncStatus('error');
+          return false;
+        }
+      } catch (err) {
+        console.warn('Backend sync unavailable (client-only mode):', err);
+        setSyncStatus('error');
+        return false;
+      }
+    },
+    [rateTiers, studioConfig, artworks]
+  );
+
+  // Automatic cache validation & sync on initial mount for any visitor / new device / incognito
+  useEffect(() => {
+    let isMounted = true;
+    async function checkServerAndInvalidateCache() {
+      try {
+        const res = await fetch('/api/initial-data', {
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && isMounted) {
+            const storedVersion = localStorage.getItem(CORE_VERSION_STORAGE_KEY);
+            // If server has custom stored data and the version differs from client cache
+            if (data.version && data.version !== storedVersion && data.rateTiers && data.studioConfig) {
+              console.log(`[AnthroCraft] Discovered updated core version (${data.version}). Invalidating older local cache.`);
+              
+              // 1. Evict legacy cached stores
+              ALL_LEGACY_KEYS.forEach((k) => {
+                try { localStorage.removeItem(k); } catch (_) {}
+              });
+
+              // 2. Hydrate from server core dataset
+              if (Array.isArray(data.rateTiers) && data.rateTiers.length > 0) {
+                setRateTiers(data.rateTiers);
+                syncRatesToStorage(data.rateTiers);
+              }
+              if (data.studioConfig) {
+                setStudioConfig(data.studioConfig);
+                syncConfigToStorage(data.studioConfig);
+              }
+              if (Array.isArray(data.artworks) && data.artworks.length > 0) {
+                setArtworks(data.artworks);
+                safeSetStorage(USER_UPLOADS_STORAGE_KEY, JSON.stringify(data.artworks.filter((a: Artwork) => a.isUserUploaded)));
+              }
+
+              // 3. Mark client cache as updated to server version
+              localStorage.setItem(CORE_VERSION_STORAGE_KEY, data.version);
+              setLastSyncedAt(Date.now());
+            }
+          }
+        }
+      } catch {
+        // Fallback to static initialData.ts
+      }
+    }
+
+    checkServerAndInvalidateCache();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Smooth scroll to top when page changes
   const setActivePage = (page: PageType) => {
@@ -363,7 +506,8 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     // Prepend to current artworks state
-    setArtworks((prev) => [newArt, ...prev]);
+    const nextArtworks = [newArt, ...artworks];
+    setArtworks(nextArtworks);
 
     // 1. Permanently record in USER_UPLOADS_STORAGE_KEY
     try {
@@ -386,11 +530,15 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (e) {
       console.warn('Failed to update deleted IDs on add:', e);
     }
+
+    // 3. Export / persist directly into core initialData.ts
+    syncToCoreSource({ artworks: nextArtworks });
   };
 
   const removeArtwork = (id: string) => {
     // 1. Remove from state
-    setArtworks((prev) => prev.filter((item) => item.id !== id));
+    const nextArtworks = artworks.filter((item) => item.id !== id);
+    setArtworks(nextArtworks);
 
     // 2. Remove from permanent USER_UPLOADS_STORAGE_KEY
     try {
@@ -415,12 +563,14 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (e) {
       console.warn('Failed to persist deleted artwork ID:', e);
     }
+
+    // 4. Export / persist directly into core initialData.ts
+    syncToCoreSource({ artworks: nextArtworks });
   };
 
   const updateArtwork = (id: string, updates: Partial<Artwork>) => {
-    setArtworks((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
-    );
+    const nextArtworks = artworks.map((item) => (item.id === id ? { ...item, ...updates } : item));
+    setArtworks(nextArtworks);
 
     // If it's a user upload, also update in USER_UPLOADS_STORAGE_KEY
     try {
@@ -436,6 +586,9 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (e) {
       console.warn('Failed to update artwork in user uploads storage:', e);
     }
+
+    // Export / persist directly into core initialData.ts
+    syncToCoreSource({ artworks: nextArtworks });
   };
 
   // Rate actions
@@ -455,19 +608,22 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
         return tier;
       });
-      syncRatesToAllStorage(next);
+      syncRatesToStorage(next);
+      syncToCoreSource({ rateTiers: next });
       return next;
     });
   };
 
   const saveAllRateTiers = (newTiers: RateTier[]) => {
     setRateTiers(newTiers);
-    syncRatesToAllStorage(newTiers);
+    syncRatesToStorage(newTiers);
+    syncToCoreSource({ rateTiers: newTiers });
   };
 
   const resetRatesToDefaults = () => {
     setRateTiers(INITIAL_RATE_TIERS);
-    syncRatesToAllStorage(INITIAL_RATE_TIERS);
+    syncRatesToStorage(INITIAL_RATE_TIERS);
+    syncToCoreSource({ rateTiers: INITIAL_RATE_TIERS });
   };
 
   const updateStudioConfig = (updates: Partial<StudioConfig>) => {
@@ -477,7 +633,8 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         ...updates,
         ...(updates.socials ? { socials: { ...prev.socials, ...updates.socials } } : {}),
       };
-      syncConfigToAllStorage(next);
+      syncConfigToStorage(next);
+      syncToCoreSource({ studioConfig: next });
       return next;
     });
   };
@@ -491,7 +648,8 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           ...socialsUpdate,
         },
       };
-      syncConfigToAllStorage(next);
+      syncConfigToStorage(next);
+      syncToCoreSource({ studioConfig: next });
       return next;
     });
   };
@@ -678,6 +836,9 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         disableOwnerMode,
         ownerPin,
         updateOwnerPin,
+        syncStatus,
+        lastSyncedAt,
+        syncToCoreSource,
       }}
     >
       {children}
