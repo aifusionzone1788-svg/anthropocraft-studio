@@ -49,6 +49,8 @@ interface StudioContextType {
 const StudioContext = createContext<StudioContextType | undefined>(undefined);
 
 const ARTWORKS_STORAGE_KEY = 'anthrocraft_artworks_v1';
+const USER_UPLOADS_STORAGE_KEY = 'anthrocraft_user_artworks_permanent_v1';
+const DELETED_ARTWORKS_STORAGE_KEY = 'anthrocraft_deleted_artworks_ids_v1';
 const RATES_STORAGE_KEY = 'anthrocraft_rates_v1';
 const CONFIG_STORAGE_KEY = 'anthrocraft_config_v1';
 const OWNER_MODE_STORAGE_KEY = 'anthrocraft_owner_mode_active';
@@ -57,20 +59,89 @@ const OWNER_PIN_STORAGE_KEY = 'anthrocraft_owner_pin_code';
 export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activePage, setActivePageState] = useState<PageType>('home');
   
-  // Load artworks from localStorage
+  // Load & merge artworks from localStorage (user uploads + default items)
   const [artworks, setArtworks] = useState<Artwork[]>(() => {
     try {
-      const saved = localStorage.getItem(ARTWORKS_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+      // 1. Manually deleted artwork IDs (never resurrect unless re-added)
+      let deletedIds: string[] = [];
+      try {
+        const deletedRaw = localStorage.getItem(DELETED_ARTWORKS_STORAGE_KEY);
+        if (deletedRaw) {
+          const parsedDeleted = JSON.parse(deletedRaw);
+          if (Array.isArray(parsedDeleted)) {
+            deletedIds = parsedDeleted;
+          }
         }
+      } catch (e) {
+        console.warn('Failed to parse deleted artwork IDs:', e);
       }
+
+      // 2. Dedicated permanent storage for user-uploaded artworks
+      let userUploads: Artwork[] = [];
+      try {
+        const userSaved = localStorage.getItem(USER_UPLOADS_STORAGE_KEY);
+        if (userSaved) {
+          const parsed = JSON.parse(userSaved);
+          if (Array.isArray(parsed)) {
+            userUploads = parsed.map((item) => ({ ...item, isUserUploaded: true }));
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to parse permanent user uploaded artworks:', e);
+      }
+
+      // 3. Backward compatibility: inspect legacy ARTWORKS_STORAGE_KEY to rescue any previous custom uploads
+      try {
+        const legacySaved = localStorage.getItem(ARTWORKS_STORAGE_KEY);
+        if (legacySaved) {
+          const parsed = JSON.parse(legacySaved);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((item: Artwork) => {
+              const isDefault = INITIAL_ARTWORKS.some((initArt) => initArt.id === item.id);
+              const alreadyPresent = userUploads.some((u) => u.id === item.id);
+              if (!isDefault && !alreadyPresent && item.id) {
+                userUploads.push({ ...item, isUserUploaded: true });
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to inspect legacy artworks:', e);
+      }
+
+      // Filter out any user uploads that were explicitly deleted
+      userUploads = userUploads.filter((item) => !deletedIds.includes(item.id));
+
+      // Persist consolidated user uploads back to USER_UPLOADS_STORAGE_KEY so they are never lost
+      try {
+        localStorage.setItem(USER_UPLOADS_STORAGE_KEY, JSON.stringify(userUploads));
+      } catch (e) {
+        console.warn('Failed to sync user uploads storage:', e);
+      }
+
+      // 4. Filter default INITIAL_ARTWORKS against deletedIds
+      const activeDefaultArtworks = INITIAL_ARTWORKS.filter(
+        (defaultArt) => !deletedIds.includes(defaultArt.id)
+      );
+
+      // 5. Merge: user uploads first, followed by default artworks that don't share IDs
+      const userUploadIds = new Set(userUploads.map((u) => u.id));
+      const nonDuplicateDefaults = activeDefaultArtworks.filter((d) => !userUploadIds.has(d.id));
+
+      const merged = [...userUploads, ...nonDuplicateDefaults];
+
+      // Sync merged state to storage
+      try {
+        localStorage.setItem(ARTWORKS_STORAGE_KEY, JSON.stringify(merged));
+      } catch (e) {
+        console.warn('Failed to sync merged artworks cache:', e);
+      }
+
+      return merged;
     } catch (e) {
-      console.warn('Failed to load artworks from storage:', e);
+      console.error('Failed to initialize and merge artworks:', e);
+      return INITIAL_ARTWORKS;
     }
-    return INITIAL_ARTWORKS;
   });
 
   // Load rate tiers from localStorage
@@ -175,18 +246,83 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ...artworkData,
       id: `art_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       createdAt: Date.now(),
+      isUserUploaded: true,
     };
+
+    // Prepend to current artworks state
     setArtworks((prev) => [newArt, ...prev]);
+
+    // 1. Permanently record in USER_UPLOADS_STORAGE_KEY
+    try {
+      const userSaved = localStorage.getItem(USER_UPLOADS_STORAGE_KEY);
+      const currentUploads: Artwork[] = userSaved ? JSON.parse(userSaved) : [];
+      const updatedUploads = [newArt, ...currentUploads.filter((item) => item.id !== newArt.id)];
+      localStorage.setItem(USER_UPLOADS_STORAGE_KEY, JSON.stringify(updatedUploads));
+    } catch (e) {
+      console.warn('Failed to save to permanent user uploads storage:', e);
+    }
+
+    // 2. Remove from deleted IDs list if re-added
+    try {
+      const deletedSaved = localStorage.getItem(DELETED_ARTWORKS_STORAGE_KEY);
+      if (deletedSaved) {
+        const deletedIds: string[] = JSON.parse(deletedSaved);
+        const updatedDeleted = deletedIds.filter((id) => id !== newArt.id);
+        localStorage.setItem(DELETED_ARTWORKS_STORAGE_KEY, JSON.stringify(updatedDeleted));
+      }
+    } catch (e) {
+      console.warn('Failed to update deleted IDs on add:', e);
+    }
   };
 
   const removeArtwork = (id: string) => {
+    // 1. Remove from state
     setArtworks((prev) => prev.filter((item) => item.id !== id));
+
+    // 2. Remove from permanent USER_UPLOADS_STORAGE_KEY
+    try {
+      const userSaved = localStorage.getItem(USER_UPLOADS_STORAGE_KEY);
+      if (userSaved) {
+        const currentUploads: Artwork[] = JSON.parse(userSaved);
+        const updatedUploads = currentUploads.filter((item) => item.id !== id);
+        localStorage.setItem(USER_UPLOADS_STORAGE_KEY, JSON.stringify(updatedUploads));
+      }
+    } catch (e) {
+      console.warn('Failed to remove from user uploads storage:', e);
+    }
+
+    // 3. Mark in DELETED_ARTWORKS_STORAGE_KEY so it is never auto-restored
+    try {
+      const deletedSaved = localStorage.getItem(DELETED_ARTWORKS_STORAGE_KEY);
+      const deletedIds: string[] = deletedSaved ? JSON.parse(deletedSaved) : [];
+      if (!deletedIds.includes(id)) {
+        deletedIds.push(id);
+        localStorage.setItem(DELETED_ARTWORKS_STORAGE_KEY, JSON.stringify(deletedIds));
+      }
+    } catch (e) {
+      console.warn('Failed to persist deleted artwork ID:', e);
+    }
   };
 
   const updateArtwork = (id: string, updates: Partial<Artwork>) => {
     setArtworks((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
     );
+
+    // If it's a user upload, also update in USER_UPLOADS_STORAGE_KEY
+    try {
+      const userSaved = localStorage.getItem(USER_UPLOADS_STORAGE_KEY);
+      if (userSaved) {
+        const currentUploads: Artwork[] = JSON.parse(userSaved);
+        const targetIdx = currentUploads.findIndex((item) => item.id === id);
+        if (targetIdx !== -1) {
+          currentUploads[targetIdx] = { ...currentUploads[targetIdx], ...updates };
+          localStorage.setItem(USER_UPLOADS_STORAGE_KEY, JSON.stringify(currentUploads));
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to update artwork in user uploads storage:', e);
+    }
   };
 
   // Rate actions

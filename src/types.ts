@@ -19,6 +19,7 @@ export interface Artwork {
   description?: string;
   aspectRatio?: 'square' | 'portrait' | 'tall' | 'wide';
   createdAt: number;
+  isUserUploaded?: boolean;
 }
 
 export interface RateTier {

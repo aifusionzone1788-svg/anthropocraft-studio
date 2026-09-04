@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import { GalleryCategory } from '../types';
 import { useStudio } from '../context/StudioContext';
 import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
-import { X, Upload, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { X, Upload, Check, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { compressImageFile } from '../utils/imageHelper';
 
 const CATEGORIES: GalleryCategory[] = [
   'CHARACTER ART',
@@ -43,7 +44,9 @@ export const UploadModal: React.FC = () => {
 
   if (!isUploadModalOpen) return null;
 
-  const handleFile = (file: File) => {
+  const [isCompressing, setIsCompressing] = useState(false);
+
+  const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       setError('Please select a valid image file (PNG, JPG, WEBP).');
       return;
@@ -54,13 +57,15 @@ export const UploadModal: React.FC = () => {
       setTitle(file.name.replace(/\.[^/.]+$/, '').toUpperCase());
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        setImageDataUrl(e.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsCompressing(true);
+      const compressed = await compressImageFile(file, 1600, 1600, 0.85);
+      setImageDataUrl(compressed);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to process image file.');
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -147,7 +152,12 @@ export const UploadModal: React.FC = () => {
               className="hidden"
             />
 
-            {imageDataUrl ? (
+            {isCompressing ? (
+              <div className="flex flex-col items-center gap-3 py-6 text-[#C5A059]">
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <span className="font-mono text-xs tracking-wider uppercase">OPTIMIZING IMAGE FOR STORAGE...</span>
+              </div>
+            ) : imageDataUrl ? (
               <div className="relative flex flex-col items-center gap-3">
                 <div className="relative max-h-48 max-w-xs overflow-hidden border border-zinc-700">
                   <img
