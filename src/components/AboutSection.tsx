@@ -73,8 +73,29 @@ export const AboutSection: React.FC = () => {
             <div className="relative border border-white/10 bg-[#0c0c0c] p-3 sm:p-4">
               <CornerCrosshairs color="border-[#C5A059]/40" />
 
-              {aboutArt && (
+              {aboutArt ? (
                 <ArtworkCard artwork={aboutArt} showActions={false} />
+              ) : (
+                <div className="py-12 px-6 text-center flex flex-col items-center justify-center space-y-4 min-h-[320px]">
+                  <div className="w-16 h-16 rounded-full border border-[#C5A059]/30 bg-[#050505] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,160,89,0.12)]">
+                    <img
+                      src="https://i.postimg.cc/FKsNFtnZ/Chat-GPT-Image-Sep-4-2026-02-37-33-PM.png"
+                      alt="AnthroCraft Emblem"
+                      className="w-full h-full object-contain rounded-full"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-mono tracking-[0.25em] text-[#C5A059] uppercase">
+                      STUDIO PHILOSOPHY & CRAFT
+                    </div>
+                    <div className="font-display text-sm font-bold tracking-wider uppercase text-[#F5F5F5]">
+                      BESPOKE CHARACTER ARTISTRY
+                    </div>
+                  </div>
+                  <p className="text-xs text-zinc-400 font-light max-w-xs leading-relaxed">
+                    Every piece is rendered with dedication to expressive emotion, anatomical silhouette, and dynamic narrative depth.
+                  </p>
+                </div>
               )}
 
               <div className="mt-3 flex items-center justify-between text-[10px] font-mono text-zinc-500 px-1">

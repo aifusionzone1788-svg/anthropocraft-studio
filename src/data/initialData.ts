@@ -58,74 +58,7 @@ export const INITIAL_MILESTONES: Milestone[] = [
   },
 ];
 
-export const INITIAL_ARTWORKS: Artwork[] = [
-  {
-    id: 'art-fenrir',
-    title: 'FENRIR // ECLIPSE CHASER',
-    category: 'CHARACTER ART',
-    imageUrl: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 'portrait',
-    year: '2024',
-    medium: 'Digital Character Painting',
-    description: 'Bespoke canine predator concept featuring dynamic atmospheric moonlight and fur rendering.',
-    createdAt: Date.now() - 600000,
-  },
-  {
-    id: 'art-solaris',
-    title: 'SOLARIS // KITSUNE RUNNER',
-    category: 'PORTRAITS',
-    imageUrl: 'https://images.unsplash.com/photo-1516934024742-b461fba47600?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 'square',
-    year: '2024',
-    medium: 'Expressive Bust Portrait & Warm Tones',
-    description: 'Vibrant vulpine study with stylized eye glow and atmospheric frost particles.',
-    createdAt: Date.now() - 500000,
-  },
-  {
-    id: 'art-verdant',
-    title: 'VERDANT // SHADOW STRIKE',
-    category: 'FULL-BODY ART',
-    imageUrl: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 'tall',
-    year: '2024',
-    medium: 'Full-Body Silhouette & Action Form',
-    description: 'Dynamic feline warrior posture emphasizing anatomical silhouette and tailored garment folds.',
-    createdAt: Date.now() - 400000,
-  },
-  {
-    id: 'art-borealis',
-    title: 'BOREALIS // FROSTFANG GUIDE',
-    category: 'REFERENCE SHEETS',
-    imageUrl: 'https://images.unsplash.com/photo-1534188753412-3e26d0d618d6?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 'wide',
-    year: '2024',
-    medium: 'Character Turnaround & Palette Sheet',
-    description: 'Complete fursona architectural sheet with color swatch palette and anatomical callouts.',
-    createdAt: Date.now() - 300000,
-  },
-  {
-    id: 'art-nightshade',
-    title: 'NIGHTSHADE // OBSIDIAN GUILD',
-    category: 'MASCOT DESIGN',
-    imageUrl: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 'portrait',
-    year: '2024',
-    medium: 'Mascot Identity & Vector Branding',
-    description: 'Tailored gaming organization mascot with bold graphic impact and adaptable vector assets.',
-    createdAt: Date.now() - 200000,
-  },
-  {
-    id: 'art-neondrift',
-    title: 'NEON DRIFT // CHRONO PACK',
-    category: 'CUSTOM ARTWORK',
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
-    aspectRatio: 'wide',
-    year: '2024',
-    medium: 'Cinematic Narrative Composition',
-    description: 'Multi-layered scene set in an iridescent nightscape with complex ambient rim lighting.',
-    createdAt: Date.now() - 100000,
-  },
-];
+export const INITIAL_ARTWORKS: Artwork[] = [];
 
 export const INITIAL_RATE_TIERS: RateTier[] = [
   {

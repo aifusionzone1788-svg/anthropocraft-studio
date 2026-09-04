@@ -77,12 +77,42 @@ export const IntroSection: React.FC = () => {
             <div className="relative border border-white/10 bg-[#0c0c0c] p-3 sm:p-4">
               <CornerCrosshairs color="border-[#C5A059]/40" />
 
-              {featuredArt && (
+              {featuredArt ? (
                 <div>
                   <ArtworkCard artwork={featuredArt} showActions={false} />
                   <div className="mt-3 flex items-center justify-between text-[10px] font-mono text-zinc-500 px-1">
                     <span className="text-zinc-400">SIGNATURE ATELIER SHOWCASE</span>
                     <span className="text-[#C5A059]">✦ ORIGINAL ARTWORK</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-12 px-6 text-center flex flex-col items-center justify-center space-y-4 min-h-[360px]">
+                  <div className="relative w-20 h-20 rounded-full border border-[#C5A059]/30 bg-[#050505] flex items-center justify-center p-2 shadow-[0_0_25px_rgba(197,160,89,0.15)]">
+                    <img
+                      src="https://i.postimg.cc/FKsNFtnZ/Chat-GPT-Image-Sep-4-2026-02-37-33-PM.png"
+                      alt="AnthroCraft Studio Emblem"
+                      className="w-full h-full object-contain rounded-full"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-mono tracking-[0.25em] text-[#C5A059] uppercase">
+                      ATELIER ARCHIVE INITIALIZED
+                    </div>
+                    <div className="font-display text-sm font-bold tracking-wider uppercase text-[#F5F5F5]">
+                      AWAITING RECENT ORIGINAL WORKS
+                    </div>
+                  </div>
+                  <p className="text-xs text-zinc-400 font-light max-w-xs leading-relaxed">
+                    The showcase archive is primed. Commission releases and character studies will be published here upon completion.
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setActivePage('rates')}
+                      className="inline-flex items-center gap-2 border border-[#C5A059]/50 bg-[#C5A059]/10 text-[#C5A059] px-4 py-2 text-[10px] font-display font-bold tracking-widest uppercase hover:bg-[#C5A059] hover:text-[#050505] transition-colors cursor-pointer"
+                    >
+                      <span>VIEW COMMISSION RATES</span>
+                    </button>
                   </div>
                 </div>
               )}

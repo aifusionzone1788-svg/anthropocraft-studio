@@ -78,7 +78,7 @@ export const UploadModal: React.FC = () => {
 
     try {
       setIsCompressing(true);
-      const compressed = await compressImageFile(file, 1600, 1600, 0.85);
+      const compressed = await compressImageFile(file, 1024, 1024, 0.78);
       setImageDataUrl(compressed);
     } catch (err: any) {
       setError(err?.message || 'Failed to process image file.');

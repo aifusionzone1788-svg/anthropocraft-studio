@@ -152,32 +152,36 @@ export const GalleryPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="border border-white/10 bg-[#0c0c0c] p-12 text-center flex flex-col items-center justify-center max-w-xl mx-auto space-y-4">
+            <div className="border border-white/10 bg-[#0c0c0c] p-12 sm:p-16 text-center flex flex-col items-center justify-center max-w-xl mx-auto space-y-4">
               <StarSparkle size="sm" variant="gold" />
-              <h3 className="font-display text-xl font-bold uppercase text-[#F5F5F5]">
-                NO ARCHIVED PIECES IN {selectedCategory}
+              <h3 className="font-display text-xl font-bold uppercase text-[#F5F5F5] tracking-wider">
+                {selectedCategory === 'ALL'
+                  ? 'STUDIO ARCHIVE IS CURRENTLY BLANK'
+                  : `NO ARCHIVED PIECES IN ${selectedCategory}`}
               </h3>
-              <p className="text-xs text-zinc-400 font-light leading-relaxed">
-                New original character commissions and reference pieces are constantly being crafted in the atelier. Inquire now to commission a bespoke piece for this category.
+              <p className="text-xs text-zinc-400 font-light leading-relaxed max-w-md">
+                {selectedCategory === 'ALL'
+                  ? 'Original character commissions, reference sheets, and studio release pieces will appear here once published in Owner Mode. Inquire now to commission a bespoke piece.'
+                  : `New original character commissions and reference pieces are constantly being crafted in the atelier. Inquire now to commission a bespoke piece for ${selectedCategory}.`}
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
                 {isOwnerMode && (
                   <button
                     type="button"
                     onClick={() => openUploadModal(selectedCategory !== 'ALL' ? selectedCategory : undefined)}
-                    className="flex items-center gap-2 border border-[#C5A059] bg-[#0c0c0e] text-[#C5A059] px-6 py-3 text-xs font-display font-bold tracking-widest uppercase hover:bg-[#C5A059] hover:text-[#050505] cursor-pointer"
+                    className="flex items-center gap-2 border border-[#C5A059] bg-[#0c0c0e] text-[#C5A059] px-6 py-3 text-xs font-display font-bold tracking-widest uppercase hover:bg-[#C5A059] hover:text-[#050505] transition-colors cursor-pointer"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>UPLOAD TO {selectedCategory}</span>
+                    <span>{selectedCategory !== 'ALL' ? `UPLOAD TO ${selectedCategory}` : 'UPLOAD FIRST ARTWORK'}</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => openContactModal()}
-                  className="flex items-center gap-2 bg-[#C5A059] text-[#050505] px-6 py-3 text-xs font-display font-bold tracking-widest uppercase hover:bg-[#d6b46f] cursor-pointer"
+                  className="flex items-center gap-2 bg-[#C5A059] text-[#050505] px-6 py-3 text-xs font-display font-bold tracking-widest uppercase hover:bg-[#d6b46f] transition-colors cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>INQUIRE FOR {selectedCategory}</span>
+                  <span>INQUIRE FOR COMMISSIONS</span>
                 </button>
               </div>
             </div>

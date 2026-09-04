@@ -79,15 +79,27 @@ function safeSetStorage(key: string, value: string) {
   try {
     localStorage.setItem(key, value);
   } catch (e: any) {
-    console.warn(`Storage write issue for ${key}:`, e);
-    // If browser hits storage limits, clear redundant non-permanent caches and retry
+    // If browser hits storage limits, clear redundant legacy keys and retry
     if (e?.name === 'QuotaExceededError' || e?.code === 22) {
       try {
-        localStorage.removeItem(ARTWORKS_STORAGE_KEY);
+        [
+          ARTWORKS_STORAGE_KEY,
+          'anthrocraft_artworks',
+          'anthrocraft_rates_permanent_v2',
+          'anthrocraft_rates_v1',
+          'anthrocraft_config_permanent_v2',
+          'anthrocraft_config_v1',
+        ].forEach((k) => {
+          if (k !== key) {
+            try { localStorage.removeItem(k); } catch (_) {}
+          }
+        });
         localStorage.setItem(key, value);
       } catch (retryErr) {
-        console.error(`Storage quota exceeded even after cache cleanup for key ${key}:`, retryErr);
+        console.warn(`Browser storage quota reached for ${key}; retaining state in memory.`);
       }
+    } else {
+      console.warn(`Storage write issue for ${key}:`, e);
     }
   }
 }
@@ -95,22 +107,76 @@ function safeSetStorage(key: string, value: string) {
 function syncRatesToAllStorage(tiers: RateTier[]) {
   const serialized = JSON.stringify(tiers);
   safeSetStorage(RATES_STORAGE_KEY, serialized);
-  LEGACY_RATES_STORAGE_KEYS.forEach((k) => safeSetStorage(k, serialized));
+  LEGACY_RATES_STORAGE_KEYS.forEach((k) => {
+    try { localStorage.removeItem(k); } catch (_) {}
+  });
 }
 
 function syncConfigToAllStorage(config: StudioConfig) {
   const serialized = JSON.stringify(config);
   safeSetStorage(CONFIG_STORAGE_KEY, serialized);
-  LEGACY_CONFIG_STORAGE_KEYS.forEach((k) => safeSetStorage(k, serialized));
+  LEGACY_CONFIG_STORAGE_KEYS.forEach((k) => {
+    try { localStorage.removeItem(k); } catch (_) {}
+  });
+}
+
+const ARTWORKS_BLANK_CLEARED_VERSION_KEY = 'anthrocraft_artworks_blank_init_v2';
+
+const LEGACY_SAMPLE_IDS = new Set([
+  'art-fenrir',
+  'art-solaris',
+  'art-verdant',
+  'art-borealis',
+  'art-nightshade',
+  'art-neondrift',
+  '1', '2', '3', '4', '5', '6',
+]);
+
+function isLegacySampleArtwork(item: any): boolean {
+  if (!item || typeof item !== 'object') return true;
+  if (item.id && LEGACY_SAMPLE_IDS.has(item.id)) return true;
+  if (typeof item.imageUrl === 'string' && (item.imageUrl.includes('images.unsplash.com') || item.imageUrl.includes('unsplash.com'))) return true;
+  if (typeof item.title === 'string') {
+    const upper = item.title.toUpperCase();
+    if (
+      upper.includes('FENRIR') ||
+      upper.includes('SOLARIS') ||
+      upper.includes('VERDANT') ||
+      upper.includes('BOREALIS') ||
+      upper.includes('NIGHTSHADE') ||
+      upper.includes('NEON DRIFT') ||
+      upper.includes('PANDA') ||
+      upper.includes('ECLIPSE CHASER') ||
+      upper.includes('KITSUNE RUNNER') ||
+      upper.includes('SHADOW STRIKE') ||
+      upper.includes('FROSTFANG') ||
+      upper.includes('OBSIDIAN GUILD') ||
+      upper.includes('CHRONO PACK')
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activePage, setActivePageState] = useState<PageType>('home');
   
-  // Load & merge artworks from localStorage (user uploads + default items)
+  // Load artworks, clearing all legacy sample placeholders so the gallery starts completely blank
   const [artworks, setArtworks] = useState<Artwork[]>(() => {
     try {
-      // 1. Manually deleted artwork IDs (never resurrect unless re-added)
+      // 1. One-time legacy cache wipe: ensure old sample artworks are completely purged from visitors' caches
+      try {
+        localStorage.removeItem(ARTWORKS_STORAGE_KEY);
+        localStorage.removeItem('anthrocraft_artworks');
+        localStorage.removeItem('anthrocraft_rates_permanent_v2');
+        localStorage.removeItem('anthrocraft_rates_v1');
+        localStorage.removeItem('anthrocraft_config_permanent_v2');
+        localStorage.removeItem('anthrocraft_config_v1');
+        localStorage.setItem(ARTWORKS_BLANK_CLEARED_VERSION_KEY, 'synced_blank_v2');
+      } catch (_) {}
+
+      // 2. Manually deleted artwork IDs
       let deletedIds: string[] = [];
       try {
         const deletedRaw = localStorage.getItem(DELETED_ARTWORKS_STORAGE_KEY);
@@ -124,71 +190,32 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.warn('Failed to parse deleted artwork IDs:', e);
       }
 
-      // 2. Dedicated permanent storage for user-uploaded artworks
+      // 3. Inspect permanent user uploads and strip any legacy sample placeholders
       let userUploads: Artwork[] = [];
       try {
         const userSaved = localStorage.getItem(USER_UPLOADS_STORAGE_KEY);
         if (userSaved) {
           const parsed = JSON.parse(userSaved);
           if (Array.isArray(parsed)) {
-            userUploads = parsed.map((item) => ({ ...item, isUserUploaded: true }));
+            userUploads = parsed
+              .filter((item) => !isLegacySampleArtwork(item) && item.isUserUploaded === true)
+              .map((item) => ({ ...item, isUserUploaded: true }));
           }
         }
       } catch (e) {
         console.warn('Failed to parse permanent user uploaded artworks:', e);
       }
 
-      // 3. Backward compatibility: inspect legacy ARTWORKS_STORAGE_KEY to rescue any previous custom uploads
-      try {
-        const legacySaved = localStorage.getItem(ARTWORKS_STORAGE_KEY);
-        if (legacySaved) {
-          const parsed = JSON.parse(legacySaved);
-          if (Array.isArray(parsed)) {
-            parsed.forEach((item: Artwork) => {
-              const isDefault = INITIAL_ARTWORKS.some((initArt) => initArt.id === item.id);
-              const alreadyPresent = userUploads.some((u) => u.id === item.id);
-              if (!isDefault && !alreadyPresent && item.id) {
-                userUploads.push({ ...item, isUserUploaded: true });
-              }
-            });
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to inspect legacy artworks:', e);
-      }
-
       // Filter out any user uploads that were explicitly deleted
       userUploads = userUploads.filter((item) => !deletedIds.includes(item.id));
 
-      // Persist consolidated user uploads back to USER_UPLOADS_STORAGE_KEY so they are never lost
-      try {
-        localStorage.setItem(USER_UPLOADS_STORAGE_KEY, JSON.stringify(userUploads));
-      } catch (e) {
-        console.warn('Failed to sync user uploads storage:', e);
-      }
+      // Persist cleaned user uploads back to permanent storage
+      safeSetStorage(USER_UPLOADS_STORAGE_KEY, JSON.stringify(userUploads));
 
-      // 4. Filter default INITIAL_ARTWORKS against deletedIds
-      const activeDefaultArtworks = INITIAL_ARTWORKS.filter(
-        (defaultArt) => !deletedIds.includes(defaultArt.id)
-      );
-
-      // 5. Merge: user uploads first, followed by default artworks that don't share IDs
-      const userUploadIds = new Set(userUploads.map((u) => u.id));
-      const nonDuplicateDefaults = activeDefaultArtworks.filter((d) => !userUploadIds.has(d.id));
-
-      const merged = [...userUploads, ...nonDuplicateDefaults];
-
-      // Sync merged state to storage
-      try {
-        localStorage.setItem(ARTWORKS_STORAGE_KEY, JSON.stringify(merged));
-      } catch (e) {
-        console.warn('Failed to sync merged artworks cache:', e);
-      }
-
-      return merged;
+      return userUploads;
     } catch (e) {
-      console.error('Failed to initialize and merge artworks:', e);
-      return INITIAL_ARTWORKS;
+      console.warn('Failed to initialize and clean artworks:', e);
+      return [];
     }
   });
 
@@ -307,7 +334,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Automatically save permanent user uploads when artworks change
   useEffect(() => {
-    const userOnly = artworks.filter((item) => item.isUserUploaded);
+    const userOnly = artworks.filter((item) => item.isUserUploaded && !isLegacySampleArtwork(item));
     safeSetStorage(USER_UPLOADS_STORAGE_KEY, JSON.stringify(userOnly));
   }, [artworks]);
 
