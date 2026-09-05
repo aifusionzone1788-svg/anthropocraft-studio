@@ -134,6 +134,7 @@ export const LightboxModal: React.FC = () => {
           <img
             src={lightboxArtwork.imageUrl}
             alt={lightboxArtwork.title}
+            referrerPolicy="no-referrer"
             className="max-h-[62vh] max-w-full object-contain rounded-xs border border-white/10 shadow-2xl"
           />
         </div>

@@ -15,6 +15,7 @@ interface StudioContextType {
   addArtwork: (artwork: Omit<Artwork, 'id' | 'createdAt'>) => void;
   removeArtwork: (id: string) => void;
   updateArtwork: (id: string, updates: Partial<Artwork>) => void;
+  clearAllArtworks: () => void;
   rateTiers: RateTier[];
   updateRateTier: (id: string, updates: Partial<RateTier>) => void;
   saveAllRateTiers: (tiers: RateTier[]) => void;
@@ -179,33 +180,6 @@ function purgeLegacyCachesAndInitialize() {
   try {
     const isCurrent = localStorage.getItem(CORE_VERSION_STORAGE_KEY) === INITIAL_DATA_VERSION;
     if (!isCurrent) {
-      // Rescue legitimate user-uploaded artwork if any exists in prior keys
-      let rescuedUploads: Artwork[] = [];
-      const priorUploadKeys = [
-        USER_UPLOADS_STORAGE_KEY,
-        'anthrocraft_user_artworks_v6',
-        'anthrocraft_user_artworks_v5',
-        'anthrocraft_user_artworks_v4',
-        'anthrocraft_user_artworks_permanent_v1',
-      ];
-      for (const k of priorUploadKeys) {
-        try {
-          const raw = localStorage.getItem(k);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-              const genuine = parsed.filter(
-                (item) => item && item.id && item.isUserUploaded === true && !isLegacySampleArtwork(item)
-              );
-              if (genuine.length > 0) {
-                rescuedUploads = genuine;
-                break;
-              }
-            }
-          }
-        } catch (_) {}
-      }
-
       // Evict all legacy keys from visitor storage
       ALL_LEGACY_KEYS.forEach((k) => {
         try {
@@ -213,16 +187,11 @@ function purgeLegacyCachesAndInitialize() {
         } catch (_) {}
       });
 
-      // Save rescued uploads or start completely clean
-      if (rescuedUploads.length > 0) {
-        try {
-          localStorage.setItem(USER_UPLOADS_STORAGE_KEY, JSON.stringify(rescuedUploads));
-        } catch (_) {}
-      } else {
-        try {
-          localStorage.removeItem(USER_UPLOADS_STORAGE_KEY);
-        } catch (_) {}
-      }
+      // Clear all artwork stores on version reset
+      try {
+        localStorage.removeItem(USER_UPLOADS_STORAGE_KEY);
+        localStorage.removeItem(DELETED_ARTWORKS_STORAGE_KEY);
+      } catch (_) {}
 
       // Seed canonical hardcoded rate sheets and studio config defaults
       try {
@@ -290,7 +259,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const userIds = new Set(userUploads.map((item) => item.id));
       const combined = [...userUploads, ...initialRemaining.filter((item) => !userIds.has(item.id))];
 
-      return combined.length > 0 ? combined : INITIAL_ARTWORKS;
+      return combined;
     } catch (e) {
       console.warn('Failed to initialize artworks, using INITIAL_ARTWORKS:', e);
       return INITIAL_ARTWORKS;
@@ -468,7 +437,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 setStudioConfig(data.studioConfig);
                 syncConfigToStorage(data.studioConfig);
               }
-              if (Array.isArray(data.artworks) && data.artworks.length > 0) {
+              if (Array.isArray(data.artworks)) {
                 setArtworks(data.artworks);
                 safeSetStorage(USER_UPLOADS_STORAGE_KEY, JSON.stringify(data.artworks.filter((a: Artwork) => a.isUserUploaded)));
               }
@@ -589,6 +558,16 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     // Export / persist directly into core initialData.ts
     syncToCoreSource({ artworks: nextArtworks });
+  };
+
+  const clearAllArtworks = () => {
+    setArtworks([]);
+    safeSetStorage(USER_UPLOADS_STORAGE_KEY, JSON.stringify([]));
+    try {
+      localStorage.removeItem(USER_UPLOADS_STORAGE_KEY);
+      localStorage.removeItem(DELETED_ARTWORKS_STORAGE_KEY);
+    } catch (_) {}
+    syncToCoreSource({ artworks: [] });
   };
 
   // Rate actions
@@ -804,6 +783,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addArtwork,
         removeArtwork,
         updateArtwork,
+        clearAllArtworks,
         rateTiers,
         updateRateTier,
         saveAllRateTiers,

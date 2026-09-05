@@ -47,6 +47,7 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
       <img
         src={artwork.imageUrl}
         alt={artwork.title}
+        referrerPolicy="no-referrer"
         className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
         loading="lazy"
       />

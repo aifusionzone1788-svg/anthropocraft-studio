@@ -3,7 +3,7 @@ import { useStudio } from '../context/StudioContext';
 import { GalleryCategory } from '../types';
 import { StarSparkle } from './DecorativeElements';
 import { ArtworkCard } from './ArtworkCard';
-import { Sparkles, Layers, Send, Upload } from 'lucide-react';
+import { Sparkles, Layers, Send, Upload, Trash2 } from 'lucide-react';
 import { compressImageFile } from '../utils/imageHelper';
 
 const CATEGORIES: GalleryCategory[] = [
@@ -17,8 +17,9 @@ const CATEGORIES: GalleryCategory[] = [
 ];
 
 export const GalleryPage: React.FC = () => {
-  const { artworks, openContactModal, isOwnerMode, openUploadModal } = useStudio();
+  const { artworks, openContactModal, isOwnerMode, openUploadModal, clearAllArtworks } = useStudio();
   const [selectedCategory, setSelectedCategory] = useState<GalleryCategory>('ALL');
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,6 +85,41 @@ export const GalleryPage: React.FC = () => {
                 <Upload className="w-4 h-4" />
                 <span>+ UPLOAD ARTWORK</span>
               </label>
+            )}
+
+            {isOwnerMode && artworks.length > 0 && (
+              isConfirmingClear ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearAllArtworks();
+                      setIsConfirmingClear(false);
+                    }}
+                    className="flex items-center gap-1.5 border border-red-500 bg-red-600 text-white px-4 py-3 text-xs font-display font-bold tracking-[0.15em] uppercase hover:bg-red-700 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>YES, DELETE ALL</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingClear(false)}
+                    className="border border-white/20 bg-[#0c0c0e] text-zinc-400 hover:text-white px-3 py-3 text-xs font-display font-bold uppercase transition-all cursor-pointer"
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingClear(true)}
+                  className="flex items-center gap-2 border border-red-500/40 bg-red-950/20 text-red-400 hover:bg-red-900/40 hover:text-red-200 px-4 py-3 text-xs font-display font-bold tracking-[0.15em] uppercase transition-all cursor-pointer"
+                  title="Owner Action: Delete All Artwork from Gallery"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>CLEAR GALLERY</span>
+                </button>
+              )
             )}
 
             <button

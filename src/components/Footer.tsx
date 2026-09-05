@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useStudio } from '../context/StudioContext';
 import { StarSparkle } from './DecorativeElements';
 
@@ -7,23 +7,30 @@ export const Footer: React.FC = () => {
   const [clickCount, setClickCount] = useState(0);
   const clickTimerRef = useRef<number | null>(null);
 
-  const handleSecretClick = () => {
-    setClickCount((prev) => {
-      const next = prev + 1;
-      if (next >= 3) {
-        openAuthModal();
-        return 0;
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        window.clearTimeout(clickTimerRef.current);
       }
-      return next;
-    });
+    };
+  }, []);
 
+  const handleSecretClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (clickTimerRef.current) {
       window.clearTimeout(clickTimerRef.current);
     }
 
-    clickTimerRef.current = window.setTimeout(() => {
+    const nextCount = clickCount + 1;
+    if (nextCount >= 3) {
       setClickCount(0);
-    }, 2000);
+      openAuthModal();
+    } else {
+      setClickCount(nextCount);
+      clickTimerRef.current = window.setTimeout(() => {
+        setClickCount(0);
+      }, 2000);
+    }
   };
 
   return (
