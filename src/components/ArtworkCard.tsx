@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Artwork } from '../types';
 import { useStudio } from '../context/StudioContext';
 import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
-import { Maximize2, Trash2 } from 'lucide-react';
+import { Maximize2, Trash2, AlertCircle } from 'lucide-react';
 
 interface ArtworkCardProps {
   artwork: Artwork;
@@ -16,6 +16,22 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
   showActions,
 }) => {
   const { openLightbox, isOwnerMode, removeArtwork } = useStudio();
+  const [imgSrc, setImgSrc] = useState(artwork.imageUrl);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setImgSrc(artwork.imageUrl);
+    setHasError(false);
+  }, [artwork.imageUrl]);
+
+  const handleImageError = () => {
+    const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+)?)/);
+    if (match && !imgSrc.includes('.webp')) {
+      setImgSrc(`/artworks/${match[1]}.webp`);
+    } else {
+      setHasError(true);
+    }
+  };
 
   const isManagementVisible = showActions !== undefined ? showActions : isOwnerMode;
 
@@ -43,14 +59,30 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
     >
       <CornerCrosshairs color="border-zinc-800 group-hover:border-[#C5A059]/70" />
 
-      {/* Main Image */}
-      <img
-        src={artwork.imageUrl}
-        alt={artwork.title}
-        referrerPolicy="no-referrer"
-        className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
-        loading="lazy"
-      />
+      {/* Main Image or Error Placeholder */}
+      {!hasError ? (
+        <img
+          src={imgSrc}
+          alt={artwork.title}
+          referrerPolicy="no-referrer"
+          onError={handleImageError}
+          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+          loading="lazy"
+        />
+      ) : (
+        <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center bg-[#0d0d0f] border border-dashed border-red-500/20">
+          <AlertCircle className="w-8 h-8 text-amber-500/80 mb-2" />
+          <span className="text-xs font-display tracking-widest text-zinc-300 uppercase font-semibold">
+            {artwork.title}
+          </span>
+          <span className="text-[10px] font-mono text-amber-400/80 mt-1 uppercase tracking-wider">
+            Remote link unavailable (404)
+          </span>
+          <span className="text-[9px] text-zinc-500 mt-2 max-w-[200px] leading-tight">
+            Click to view details or replace in Owner Mode
+          </span>
+        </div>
+      )}
 
       {/* Gradient Overlay for Editorial Depth */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050505]/95 via-[#050505]/30 to-[#050505]/40 opacity-70 group-hover:opacity-85 transition-opacity" />

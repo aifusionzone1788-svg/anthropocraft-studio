@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStudio } from '../context/StudioContext';
 import { GalleryCategory } from '../types';
 import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
-import { X, Calendar, Layers, Info, Trash2, Edit3, Check, RotateCcw } from 'lucide-react';
+import { X, Calendar, Layers, Info, Trash2, Edit3, Check, RotateCcw, AlertCircle } from 'lucide-react';
 
 const CATEGORIES: GalleryCategory[] = [
   'CHARACTER ART',
@@ -22,6 +22,8 @@ export const LightboxModal: React.FC = () => {
   const [editMedium, setEditMedium] = useState('');
   const [editYear, setEditYear] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [imgSrc, setImgSrc] = useState('');
+  const [imgError, setImgError] = useState(false);
 
   // Sync edit form fields whenever lightbox opens a piece
   useEffect(() => {
@@ -31,9 +33,20 @@ export const LightboxModal: React.FC = () => {
       setEditMedium(lightboxArtwork.medium || '');
       setEditYear(lightboxArtwork.year || '');
       setEditDescription(lightboxArtwork.description || '');
+      setImgSrc(lightboxArtwork.imageUrl);
+      setImgError(false);
       setIsEditing(false);
     }
   }, [lightboxArtwork]);
+
+  const handleImageError = () => {
+    const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+)?)/);
+    if (match && !imgSrc.includes('.webp')) {
+      setImgSrc(`/artworks/${match[1]}.webp`);
+    } else {
+      setImgError(true);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -131,12 +144,33 @@ export const LightboxModal: React.FC = () => {
 
         {/* Main Artwork Viewport */}
         <div className="relative flex-1 flex items-center justify-center p-4 bg-[#050505] overflow-auto max-h-[66vh]">
-          <img
-            src={lightboxArtwork.imageUrl}
-            alt={lightboxArtwork.title}
-            referrerPolicy="no-referrer"
-            className="max-h-[62vh] max-w-full object-contain rounded-xs border border-white/10 shadow-2xl"
-          />
+          {!imgError ? (
+            <img
+              src={imgSrc}
+              alt={lightboxArtwork.title}
+              referrerPolicy="no-referrer"
+              onError={handleImageError}
+              className="max-h-[62vh] max-w-full object-contain rounded-xs border border-white/10 shadow-2xl"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center p-8 text-center max-w-md bg-[#0c0c0e] border border-dashed border-red-500/30 rounded-xs">
+              <AlertCircle className="w-10 h-10 text-amber-500/80 mb-3" />
+              <h4 className="text-sm font-display font-bold tracking-widest text-zinc-200 uppercase">
+                REMOTE IMAGE UNAVAILABLE
+              </h4>
+              <p className="text-xs text-zinc-400 mt-2">
+                The image host returned HTTP 404 (Not Found) for this external link.
+              </p>
+              <div className="mt-3 p-2 bg-black/60 border border-white/5 font-mono text-[10px] text-zinc-400 break-all select-all">
+                {lightboxArtwork.imageUrl}
+              </div>
+              {isOwnerMode && (
+                <p className="text-[11px] text-[#C5A059] mt-3">
+                  Tip: Use the Edit or Delete button above to update or replace this entry.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Bottom Details / Edit Form */}

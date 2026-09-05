@@ -28,7 +28,21 @@ export const RateTierImageControl: React.FC<RateTierImageControlProps> = ({
   const [urlValue, setUrlValue] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [imgSrc, setImgSrc] = useState<string | undefined>(tier.imageUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    setImgSrc(tier.imageUrl);
+  }, [tier.imageUrl]);
+
+  const handleImageError = () => {
+    if (imgSrc && imgSrc.includes('anthropo')) {
+      const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+)?)/);
+      if (match && match[1]) {
+        setImgSrc(`/artworks/${match[1]}.webp`);
+      }
+    }
+  };
 
   // If Owner Mode is OFF and there is no image, render nothing (completely clean card)
   if (!isOwnerMode && !tier.imageUrl) {
@@ -41,8 +55,10 @@ export const RateTierImageControl: React.FC<RateTierImageControlProps> = ({
       <div className="mb-6 space-y-2">
         <div className="relative aspect-video overflow-hidden border border-white/10 bg-[#050505]">
           <img
-            src={tier.imageUrl}
+            src={imgSrc || tier.imageUrl}
             alt={tier.title}
+            referrerPolicy="no-referrer"
+            onError={handleImageError}
             className="w-full h-full object-cover"
             loading="lazy"
           />
@@ -143,8 +159,10 @@ export const RateTierImageControl: React.FC<RateTierImageControlProps> = ({
           onDragLeave={handleDragLeave}
         >
           <img
-            src={tier.imageUrl}
+            src={imgSrc || tier.imageUrl}
             alt={tier.title}
+            referrerPolicy="no-referrer"
+            onError={handleImageError}
             className="w-full h-full object-cover"
           />
 
