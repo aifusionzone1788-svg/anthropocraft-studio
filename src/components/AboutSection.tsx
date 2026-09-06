@@ -2,6 +2,8 @@ import React from 'react';
 import { useStudio } from '../context/StudioContext';
 import { StarSparkle, CornerCrosshairs } from './DecorativeElements';
 import { ArtworkCard } from './ArtworkCard';
+import { HeadingReveal, FadeUp } from './ScrollReveal';
+import { motion } from 'motion/react';
 
 export const AboutSection: React.FC = () => {
   const { studioConfig, artworks } = useStudio();
@@ -16,29 +18,38 @@ export const AboutSection: React.FC = () => {
     >
       <div className="mx-auto max-w-7xl">
         {/* Section Label */}
-        <div className="flex items-center gap-2 text-[10px] font-mono tracking-[0.3em] text-[#C5A059] uppercase mb-8">
-          <StarSparkle size="xs" variant="gold" />
-          <span>SECTION 02 // STUDIO IDENTITY</span>
-        </div>
+        <FadeUp delay={0} yOffset={12}>
+          <div className="flex items-center gap-2 text-[10px] font-mono tracking-[0.3em] text-[#C5A059] uppercase mb-6">
+            <StarSparkle size="xs" variant="gold" />
+            <span>SECTION 02 // STUDIO IDENTITY</span>
+          </div>
+        </FadeUp>
 
         {/* Top Editorial Heading */}
         <div className="mb-14 max-w-3xl">
-          <h2 className="font-display text-xs sm:text-sm font-bold tracking-[0.3em] uppercase text-zinc-500 mb-2">
-            ABOUT
-          </h2>
-          <h3 className="font-display font-black tracking-tight uppercase text-[#F5F5F5] leading-[1.05]">
-            <span className="block text-2xl xs:text-3xl sm:text-4xl md:text-[42px] lg:text-[40px] xl:text-[46px] tracking-tight whitespace-nowrap">
-              ANTHROPOCRAFT
-            </span>
-            <span className="block text-[#C5A059] font-light text-xl xs:text-2xl sm:text-3xl lg:text-[34px] tracking-tight mt-0.5 whitespace-nowrap">
-              STUDIO
-            </span>
-          </h3>
-          <div className="border-l-2 border-[#C5A059] pl-5 mt-6">
-            <p className="text-sm sm:text-base text-[#F5F5F5]/90 font-light leading-relaxed">
-              {studioConfig.aboutBody}
-            </p>
-          </div>
+          <HeadingReveal
+            as="h2"
+            text="ABOUT"
+            className="font-display text-xs sm:text-sm font-bold tracking-[0.3em] uppercase text-zinc-500 mb-2"
+            startTracking="0.45em"
+            endTracking="0.3em"
+            glow={true}
+          />
+          <HeadingReveal
+            as="h3"
+            text="ANTHROPOCRAFT STUDIO"
+            className="font-display text-2xl xs:text-3xl sm:text-4xl md:text-[42px] lg:text-[40px] xl:text-[46px] font-black uppercase text-[#F5F5F5] leading-[1.05]"
+            startTracking="0.08em"
+            endTracking="-0.02em"
+            glow={true}
+          />
+          <FadeUp delay={0.15} yOffset={16}>
+            <div className="border-l-2 border-[#C5A059] pl-5 mt-6">
+              <p className="text-sm sm:text-base text-[#F5F5F5]/90 font-light leading-relaxed">
+                {studioConfig.aboutBody}
+              </p>
+            </div>
+          </FadeUp>
         </div>
 
         {/* Asymmetrical Grid: 3 Pillars + Optional Artwork Placement */}
@@ -46,9 +57,17 @@ export const AboutSection: React.FC = () => {
           {/* Left: 3 Editorial Pillars */}
           <div className="lg:col-span-7 space-y-6">
             {studioConfig.aboutPillars.map((pillar, idx) => (
-              <div
+              <motion.div
                 key={pillar.title}
-                className="group relative border border-white/10 bg-[#0c0c0c] p-6 sm:p-7 transition-all duration-300 hover:border-[#C5A059]/60"
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{
+                  duration: 0.5,
+                  delay: idx * 0.1,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="group relative border border-white/10 bg-[#0c0c0c] p-6 sm:p-7 transition-all duration-300 hover:border-[#C5A059]/60 will-change-transform"
               >
                 <CornerCrosshairs color="border-zinc-800 group-hover:border-[#C5A059]/40" />
                 <div className="flex items-start gap-4">
@@ -64,12 +83,22 @@ export const AboutSection: React.FC = () => {
                     </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
           {/* Right: Studio Editorial Canvas Frame / Placeholder */}
-          <div className="lg:col-span-5 relative">
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{
+              duration: 0.6,
+              delay: 0.2,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="lg:col-span-5 relative will-change-transform"
+          >
             <div className="relative border border-white/10 bg-[#0c0c0c] p-3 sm:p-4">
               <CornerCrosshairs color="border-[#C5A059]/40" />
 
@@ -103,7 +132,7 @@ export const AboutSection: React.FC = () => {
                 <span className="text-[#C5A059]">✦ DISCIPLINE</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
