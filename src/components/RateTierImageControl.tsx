@@ -37,7 +37,7 @@ export const RateTierImageControl: React.FC<RateTierImageControlProps> = ({
 
   const handleImageError = () => {
     if (imgSrc && imgSrc.includes('anthropo')) {
-      const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+)?)/);
+      const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+(?:-\d+)*)?)/);
       if (match && match[1]) {
         setImgSrc(`/artworks/${match[1]}.webp`);
       }

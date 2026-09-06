@@ -293,7 +293,7 @@ export const ContactModal: React.FC = () => {
                     type="text"
                     value={formInstagram}
                     onChange={(e) => setFormInstagram(e.target.value)}
-                    placeholder="anthrocraft.studio or https://instagram.com/..."
+                    placeholder="Anthropocraft_Studio or https://instagram.com/..."
                     className="w-full bg-[#0c0c0e] border border-zinc-700 px-3 py-2 text-xs text-[#F5F5F5] focus:border-[#C5A059] focus:outline-none font-mono"
                   />
                   <div className="text-[10px] font-mono text-zinc-400 flex items-center justify-between">
@@ -314,7 +314,7 @@ export const ContactModal: React.FC = () => {
                     type="text"
                     value={formTwitter}
                     onChange={(e) => setFormTwitter(e.target.value)}
-                    placeholder="anthrocraft or https://x.com/..."
+                    placeholder="@Anthropocraft12 or https://x.com/..."
                     className="w-full bg-[#0c0c0e] border border-zinc-700 px-3 py-2 text-xs text-[#F5F5F5] focus:border-[#C5A059] focus:outline-none font-mono"
                   />
                   <div className="text-[10px] font-mono text-zinc-400 flex items-center justify-between">
@@ -335,7 +335,7 @@ export const ContactModal: React.FC = () => {
                     type="text"
                     value={formDiscord}
                     onChange={(e) => setFormDiscord(e.target.value)}
-                    placeholder="anthrocraft.studio or https://discord.gg/..."
+                    placeholder="anthropocraft_studio or https://discord.gg/..."
                     className="w-full bg-[#0c0c0e] border border-zinc-700 px-3 py-2 text-xs text-[#F5F5F5] focus:border-[#C5A059] focus:outline-none font-mono"
                   />
                   <div className="text-[10px] font-mono text-zinc-400">
@@ -356,7 +356,7 @@ export const ContactModal: React.FC = () => {
                     type="email"
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
-                    placeholder="contact@anthrocraft.studio"
+                    placeholder="anthropocraftstudio@gmail.com"
                     className="w-full bg-[#0c0c0e] border border-zinc-700 px-3 py-2 text-xs text-[#F5F5F5] focus:border-[#C5A059] focus:outline-none font-mono"
                   />
                   <div className="text-[10px] font-mono text-zinc-400">

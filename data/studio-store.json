@@ -1,6 +1,6 @@
 {
-  "version": "anthrocraft_v_artworks_custom_3_complete_2026",
-  "updatedAt": "2026-09-05T20:12:00.000Z",
+  "version": "anthrocraft_v_discord_anthropocraft_studio_2026",
+  "updatedAt": "2026-09-06T20:36:00.000Z",
   "rateTiers": [
     {
       "id": "character-art",
@@ -52,7 +52,6 @@
       "subtitle": "Comprehensive Character Guide",
       "description": "The definitive architectural guide for your character or fursona, including multi-angle turnaround views, color swatches, eye callouts, and apparel options.",
       "turnaround": "3 - 5 Weeks",
-      "imageUrl": "https://cdn.phototourl.com/free/2026-09-05-553f3779-48a7-4585-ba97-2a0beed0e732.png",
       "deliverables": [
         "Front + Back full-body views",
         "Headshot expressions + maw / paw close-ups",
@@ -81,7 +80,6 @@
       "subtitle": "Complex Multi-Character & Scene",
       "description": "Bespoke large-scale compositions, complex cinematic backgrounds, multi-character interactions, or custom artbook illustrations.",
       "turnaround": "Flexible / Based on Scope",
-      "imageUrl": "https://user30093.na.imgto.link/public/20260905/anthropocraftstudio-3.avif",
       "deliverables": [
         "Custom concept storyboard & color script",
         "Full background environment design",
@@ -115,14 +113,98 @@
     "commissionStatus": "OPEN",
     "slotsAvailable": 3,
     "socials": {
-      "discord": "anthrocraft.studio",
-      "twitter": "https://twitter.com/anthrocraft",
-      "instagram": "https://instagram.com/anthrocraft.studio",
+      "discord": "anthropocraft_studio",
+      "twitter": "https://x.com/Anthropocraft12",
+      "instagram": "https://instagram.com/Anthropocraft_Studio",
       "artstation": "https://artstation.com/anthrocraft",
-      "email": "contact@anthrocraft.studio"
+      "email": "anthropocraftstudio@gmail.com"
     }
   },
   "artworks": [
+    {
+      "id": "art-anthro-mascot-concept",
+      "title": "ROSE MASCOT IDENTITY & CONCEPT",
+      "category": "MASCOT DESIGN",
+      "imageUrl": "https://user30093.na.imgto.link/public/20260906/mascot.avif",
+      "year": "2026",
+      "medium": "Digital Mascot Illustration & Brand Identity / 300 DPI",
+      "description": "Expressive anthropomorphic mascot concept designed with warm blush tones, friendly character gestures, and fluid silhouette suitable for streaming, badges, and brand identity.",
+      "aspectRatio": "wide",
+      "createdAt": 1788645000000,
+      "isUserUploaded": true
+    },
+    {
+      "id": "art-anthro-fullbody-16-1",
+      "title": "NOCTURNE SLATE FULL-BODY STUDY",
+      "category": "FULL-BODY ART",
+      "imageUrl": "https://user30093.na.imgto.link/public/20260906/anthropocraftstudio-16-1.avif",
+      "year": "2026",
+      "medium": "Digital Full-Body Character Scene / 300 DPI",
+      "description": "Atmospheric full-body anthropomorphic composition bathed in oceanic indigo and slate lighting, capturing nuanced pose anatomy and immersive cinematic depth.",
+      "aspectRatio": "wide",
+      "createdAt": 1788644800000,
+      "isUserUploaded": true
+    },
+    {
+      "id": "art-anthro-character-17",
+      "title": "PASTEL CHARACTER ART STUDY",
+      "category": "CHARACTER ART",
+      "imageUrl": "https://user30093.na.imgto.link/public/20260906/anthropocraftstudio-17.avif",
+      "year": "2026",
+      "medium": "Digital Character Illustration & Study / 300 DPI",
+      "description": "Nuanced anthropomorphic character piece rendered in delicate lavender and pastel tones, capturing expressive demeanor, clean linework, and atmospheric illumination.",
+      "aspectRatio": "square",
+      "createdAt": 1788644500000,
+      "isUserUploaded": true
+    },
+    {
+      "id": "art-anthro-portrait-18",
+      "title": "EMOTIVE CHARACTER HEADSHOT STUDY",
+      "category": "PORTRAITS",
+      "imageUrl": "https://user30093.na.imgto.link/public/20260906/anthropocraftstudio-18.avif",
+      "year": "2026",
+      "medium": "Digital Character Portrait & Avatar Study / 300 DPI",
+      "description": "Intimate close-up anthropomorphic portrait capturing expressive gaze, nuanced facial fur textures, and deep atmospheric lighting in balanced square framing.",
+      "aspectRatio": "square",
+      "createdAt": 1788644000000,
+      "isUserUploaded": true
+    },
+    {
+      "id": "art-anthro-custom-19",
+      "title": "CUSTOM ANTHROPOMORPHIC MASTERWORK",
+      "category": "CUSTOM ARTWORK",
+      "imageUrl": "https://user30093.na.imgto.link/public/20260906/anthropocraftstudio-19.avif",
+      "year": "2026",
+      "medium": "Custom Character Masterwork / 300 DPI",
+      "description": "Bespoke custom anthropomorphic artwork showcasing striking anatomical poise, intricate costume elements, and luminous atmosphere tailored to creative client vision.",
+      "aspectRatio": "tall",
+      "createdAt": 1788643800000,
+      "isUserUploaded": true
+    },
+    {
+      "id": "art-anthro-reference-sheet-20",
+      "title": "CHARACTER MODEL GUIDE & TURNAROUND",
+      "category": "REFERENCE SHEETS",
+      "imageUrl": "https://user30093.na.imgto.link/public/20260906/anthropocraftstudio-20.avif",
+      "year": "2026",
+      "medium": "Complete Character Turnaround & Spec Sheet / 300 DPI",
+      "description": "Comprehensive anthropomorphic character model sheet featuring full anatomical turnaround, expressions, accessories, and color swatch hierarchy.",
+      "aspectRatio": "wide",
+      "createdAt": 1788643500000,
+      "isUserUploaded": true
+    },
+    {
+      "id": "art-anthro-character-art-7-1",
+      "title": "EXPRESSIVE CHARACTER ART STUDY",
+      "category": "CHARACTER ART",
+      "imageUrl": "https://user30093.na.imgto.link/public/20260906/anthropocraftstudio-7-1.avif",
+      "year": "2026",
+      "medium": "Digital Character Illustration / 300 DPI",
+      "description": "Expressive anthropomorphic character artwork capturing dynamic demeanor, subtle anatomical nuance, detailed textural rendering, and atmospheric lighting.",
+      "aspectRatio": "tall",
+      "createdAt": 1788643200000,
+      "isUserUploaded": true
+    },
     {
       "id": "art-anthro-custom-3",
       "title": "CUSTOM ANTHROPOMORPHIC ARTWORK",
