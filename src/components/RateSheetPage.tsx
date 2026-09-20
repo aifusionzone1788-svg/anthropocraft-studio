@@ -145,6 +145,7 @@ export const RateSheetPage: React.FC = () => {
                 ease: [0.22, 1, 0.36, 1],
               }}
               className="flex flex-col h-full will-change-transform"
+              whileHover={{ y: -6, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } }}
             >
               <div
                 className={`group relative flex flex-col justify-between border bg-[#0c0c0c] p-6 sm:p-8 transition-all duration-300 h-full ${

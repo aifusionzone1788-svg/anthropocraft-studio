@@ -2,6 +2,8 @@ import React from 'react';
 import { useStudio } from '../context/StudioContext';
 import { StarSparkle } from './DecorativeElements';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { MagneticButton } from './MagneticButton';
+import { motion } from 'motion/react';
 
 export const HeroSection: React.FC = () => {
   const { setActivePage, studioConfig } = useStudio();
@@ -38,14 +40,55 @@ export const HeroSection: React.FC = () => {
 
         {/* High-Impact Brand Typography - Centered and fitted within frame */}
         <div className="relative my-4 select-none w-full max-w-5xl mx-auto px-2 sm:px-6 text-center flex flex-col items-center justify-center">
-          <div className="relative inline-flex flex-col items-center text-center max-w-full">
-            <h1 className="font-display font-black uppercase text-[#F5F5F5] leading-[0.9] text-center">
-              <span className="block text-[clamp(1.5rem,6.2vw,4.5rem)] tracking-tight whitespace-nowrap text-center">
-                {studioConfig.brandName}
-              </span>
-              <span className="block text-[#C5A059] text-[clamp(1.25rem,4.8vw,3.6rem)] tracking-tight font-black mt-1 sm:mt-2 whitespace-nowrap text-center">
-                {studioConfig.brandSub}
-              </span>
+          <div className="relative inline-flex flex-col items-center text-center w-full max-w-4xl">
+            <h1 className="font-display font-black uppercase text-[#F5F5F5] leading-[0.9] text-center w-full overflow-hidden">
+              {/* Split-Slide Marquee: Track 1 (Brand Name - Leftward drift) */}
+              <div className="relative overflow-hidden w-full py-1 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+                <motion.div
+                  className="flex whitespace-nowrap will-change-transform"
+                  animate={{ x: ['0%', '-50%'] }}
+                  transition={{
+                    repeat: Infinity,
+                    repeatType: 'loop',
+                    duration: 22,
+                    ease: 'linear',
+                  }}
+                >
+                  {[...Array(4)].map((_, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-4 sm:gap-6 px-3 sm:px-5 text-[clamp(1.5rem,6.2vw,4.5rem)] tracking-tight whitespace-nowrap text-center"
+                    >
+                      <span>{studioConfig.brandName}</span>
+                      <span className="text-[#C5A059]/60 text-[0.4em] select-none">✦</span>
+                    </span>
+                  ))}
+                </motion.div>
+              </div>
+
+              {/* Split-Slide Marquee: Track 2 (Brand Subtitle - Rightward counter-drift) */}
+              <div className="relative overflow-hidden w-full py-1 mt-1 sm:mt-2 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+                <motion.div
+                  className="flex whitespace-nowrap will-change-transform"
+                  animate={{ x: ['-50%', '0%'] }}
+                  transition={{
+                    repeat: Infinity,
+                    repeatType: 'loop',
+                    duration: 18,
+                    ease: 'linear',
+                  }}
+                >
+                  {[...Array(4)].map((_, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-4 sm:gap-6 px-3 sm:px-5 text-[#C5A059] text-[clamp(1.25rem,4.8vw,3.6rem)] tracking-tight font-black whitespace-nowrap text-center"
+                    >
+                      <span>{studioConfig.brandSub}</span>
+                      <span className="text-[#F5F5F5]/40 text-[0.4em] select-none">✦</span>
+                    </span>
+                  ))}
+                </motion.div>
+              </div>
             </h1>
 
             {/* Geometric star accents matching design theme */}
@@ -72,23 +115,21 @@ export const HeroSection: React.FC = () => {
 
         {/* Two Clear Call-to-Action Buttons */}
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-md">
-          <button
-            type="button"
+          <MagneticButton
             onClick={() => setActivePage('gallery')}
             className="group w-full sm:w-auto relative flex items-center justify-center gap-3 bg-[#C5A059] text-[#050505] px-8 py-4 text-xs font-display font-bold tracking-[0.15em] uppercase hover:bg-[#d6b46f] cursor-pointer shadow-[0_0_25px_rgba(197,160,89,0.25)]"
           >
             <span>EXPLORE GALLERY</span>
             <ArrowRight className="w-4 h-4" />
-          </button>
+          </MagneticButton>
 
-          <button
-            type="button"
+          <MagneticButton
             onClick={() => setActivePage('rates')}
             className="group w-full sm:w-auto relative flex items-center justify-center gap-3 border border-[#C5A059] bg-[#0c0c0c]/80 px-8 py-4 text-xs font-display font-bold tracking-[0.15em] uppercase text-[#C5A059] hover:bg-[#C5A059] hover:text-[#050505] cursor-pointer"
           >
             <span>RATE SHEET</span>
             <Sparkles className="w-3.5 h-3.5" />
-          </button>
+          </MagneticButton>
         </div>
       </div>
     </section>

@@ -4,6 +4,7 @@ import { StarSparkle, CornerCrosshairs } from './DecorativeElements';
 import { ArtworkCard } from './ArtworkCard';
 import { HeadingReveal, FadeUp } from './ScrollReveal';
 import { motion } from 'motion/react';
+import { OrganicBreathing } from './OrganicBreathing';
 
 export const AboutSection: React.FC = () => {
   const { studioConfig, artworks } = useStudio();
@@ -103,7 +104,9 @@ export const AboutSection: React.FC = () => {
               <CornerCrosshairs color="border-[#C5A059]/40" />
 
               {aboutArt ? (
-                <ArtworkCard artwork={aboutArt} showActions={false} />
+                <OrganicBreathing duration={5.5} scaleAmount={1.015} floatY={-3}>
+                  <ArtworkCard artwork={aboutArt} showActions={false} />
+                </OrganicBreathing>
               ) : (
                 <div className="py-12 px-6 text-center flex flex-col items-center justify-center space-y-4 min-h-[320px]">
                   <div className="w-16 h-16 rounded-full border border-[#C5A059]/30 bg-[#050505] flex items-center justify-center p-2 shadow-[0_0_20px_rgba(197,160,89,0.12)]">

@@ -15,12 +15,16 @@ import { ContactModal } from './components/ContactModal';
 import { EditRatesModal } from './components/EditRatesModal';
 import { OwnerAuthModal } from './components/OwnerAuthModal';
 import { OwnerModeBanner } from './components/OwnerModeBanner';
+import { FurryCursorTrail } from './components/FurryCursorTrail';
 
 const AppContent: React.FC = () => {
   const { activePage } = useStudio();
 
   return (
     <div className="flex min-h-screen flex-col bg-[#09090b] text-[#f4f4f5] selection:bg-[#d4af37]/25 selection:text-[#fef08a]">
+      {/* 60fps Organic Furry Theme Stardust Cursor Trail */}
+      <FurryCursorTrail />
+
       {/* Privileged Owner Mode Status Banner (renders ONLY when Owner Mode is enabled) */}
       <OwnerModeBanner />
 

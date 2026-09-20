@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { Artwork } from '../types';
 import { useStudio } from '../context/StudioContext';
 import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
 import { Maximize2, Trash2, AlertCircle } from 'lucide-react';
+import { useTiltAnimation } from '../hooks/useTiltAnimation';
 
 interface ArtworkCardProps {
   artwork: Artwork;
@@ -18,6 +20,13 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
   const { openLightbox, isOwnerMode, removeArtwork } = useStudio();
   const [imgSrc, setImgSrc] = useState(artwork.imageUrl);
   const [hasError, setHasError] = useState(false);
+
+  // 60fps 3D Parallax Tilt with dynamic specular reflection
+  const { cardRef, style: tiltStyle, glareBackground, bind: tiltBind } = useTiltAnimation({
+    maxTilt: 6.5,
+    scale: 1.022,
+    perspective: 1100,
+  });
 
   useEffect(() => {
     setImgSrc(artwork.imageUrl);
@@ -54,12 +63,22 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
   const aspectClass = artwork.aspectRatio ? aspectClassMap[artwork.aspectRatio] : 'aspect-[4/5]';
 
   return (
-    <div
+    <motion.div
+      ref={cardRef}
       id={`artwork-${artwork.id}`}
       onClick={() => openLightbox(artwork)}
-      className={`group relative overflow-hidden border border-white/10 bg-[#0c0c0c] transition-all duration-300 hover:border-[#C5A059]/70 cursor-pointer ${aspectClass} ${className}`}
+      style={tiltStyle}
+      {...tiltBind}
+      className={`group relative overflow-hidden border border-white/10 bg-[#0c0c0c] transition-colors duration-300 hover:border-[#C5A059]/70 cursor-pointer ${aspectClass} ${className} will-change-transform`}
     >
       <CornerCrosshairs color="border-zinc-800 group-hover:border-[#C5A059]/70" />
+
+      {/* Dynamic 3D Specular Light Reflection Glare */}
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-30 transition-opacity"
+        style={{ background: glareBackground }}
+      />
 
       {/* Main Image or Error Placeholder */}
       {!hasError ? (
@@ -133,6 +152,6 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
           <span className="text-[10px] text-[#C5A059] tracking-widest font-mono shrink-0 ml-2">ARCHIVE</span>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
