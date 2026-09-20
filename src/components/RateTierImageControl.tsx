@@ -28,43 +28,94 @@ export const RateTierImageControl: React.FC<RateTierImageControlProps> = ({
   const [urlValue, setUrlValue] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [imgSrc, setImgSrc] = useState<string | undefined>(tier.imageUrl);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const allImages = React.useMemo(() => {
+    const list: string[] = [];
+    if (tier.imageUrl) list.push(tier.imageUrl);
+    if (tier.additionalImages && Array.isArray(tier.additionalImages)) {
+      tier.additionalImages.forEach((img) => {
+        if (img && !list.includes(img)) list.push(img);
+      });
+    }
+    return list;
+  }, [tier.imageUrl, tier.additionalImages]);
+
+  const [imgSrc, setImgSrc] = useState<string | undefined>(allImages[0] || tier.imageUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
-    setImgSrc(tier.imageUrl);
-  }, [tier.imageUrl]);
+    const active = allImages[activeImageIndex] || tier.imageUrl;
+    setImgSrc(active);
+  }, [tier.imageUrl, tier.additionalImages, activeImageIndex, allImages]);
 
   const handleImageError = () => {
     if (imgSrc && imgSrc.includes('anthropo')) {
       const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+(?:-\d+)*)?)/);
       if (match && match[1]) {
-        setImgSrc(`/artworks/${match[1]}.webp`);
+        if (imgSrc.startsWith('http') && !imgSrc.includes('/artworks/')) {
+          setImgSrc(`/artworks/${match[1]}.avif`);
+        } else {
+          setImgSrc(`/artworks/${match[1]}.webp`);
+        }
+      }
+    } else if (imgSrc && imgSrc.includes('your-paragraph-text')) {
+      if (imgSrc.startsWith('http') && !imgSrc.includes('/artworks/')) {
+        setImgSrc('/artworks/your-paragraph-text.avif');
       }
     }
   };
 
   // If Owner Mode is OFF and there is no image, render nothing (completely clean card)
-  if (!isOwnerMode && !tier.imageUrl) {
+  if (!isOwnerMode && allImages.length === 0) {
     return null;
   }
 
   // If Owner Mode is OFF and there IS an image, render a clean sample art display with zero owner controls
-  if (!isOwnerMode && tier.imageUrl) {
+  if (!isOwnerMode && allImages.length > 0) {
+    const activeImg = allImages[activeImageIndex] || allImages[0];
     return (
       <div className="mb-6 space-y-2">
-        <div className="relative aspect-video overflow-hidden border border-white/10 bg-[#050505]">
+        <div className="relative aspect-video overflow-hidden border border-white/10 bg-[#050505] group">
           <img
-            src={imgSrc || tier.imageUrl}
+            src={imgSrc || activeImg}
             alt={tier.title}
             referrerPolicy="no-referrer"
             onError={handleImageError}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-opacity duration-300"
             loading="lazy"
           />
-          <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#050505]/90 text-[9px] font-mono text-zinc-300 border border-white/10 tracking-wider">
-            SAMPLE ART
+          <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 bg-[#050505]/90 text-[9px] font-mono text-zinc-300 border border-white/10 tracking-wider">
+            <span>SAMPLE ART</span>
+            {allImages.length > 1 && (
+              <span className="text-[#C5A059] font-bold">
+                0{activeImageIndex + 1}/0{allImages.length}
+              </span>
+            )}
           </div>
+
+          {allImages.length > 1 && (
+            <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-1.5 z-10">
+              {allImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIndex(idx);
+                    setImgSrc(allImages[idx]);
+                  }}
+                  className={`px-2 py-0.5 text-[9px] font-mono tracking-widest transition-all cursor-pointer ${
+                    activeImageIndex === idx
+                      ? 'bg-[#C5A059] text-[#050505] font-bold shadow-md'
+                      : 'bg-black/80 hover:bg-black text-zinc-300 border border-white/15'
+                  }`}
+                >
+                  SAMPLE 0{idx + 1}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -175,6 +226,29 @@ export const RateTierImageControl: React.FC<RateTierImageControlProps> = ({
           <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#050505]/90 text-[9px] font-mono text-zinc-300 border border-white/10 tracking-wider">
             SAMPLE ART
           </div>
+
+          {allImages.length > 1 && (
+            <div className="absolute top-2 inset-x-0 flex items-center justify-center gap-1 z-10 pointer-events-auto">
+              {allImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIndex(idx);
+                    setImgSrc(allImages[idx]);
+                  }}
+                  className={`px-2 py-0.5 text-[8px] font-mono tracking-widest transition-all cursor-pointer ${
+                    activeImageIndex === idx
+                      ? 'bg-[#C5A059] text-[#050505] font-bold shadow-md'
+                      : 'bg-black/80 hover:bg-black text-zinc-300 border border-white/20'
+                  }`}
+                >
+                  SAMPLE 0{idx + 1}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Loading state indicator */}
           {isUploading && (

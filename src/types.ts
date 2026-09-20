@@ -32,6 +32,7 @@ export interface RateTier {
   turnaround?: string;
   deliverables: string[];
   imageUrl?: string; // Optional real artwork sample uploaded by artist
+  additionalImages?: string[]; // Optional secondary sample artworks
   featured?: boolean;
 }
 

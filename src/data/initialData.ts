@@ -1,6 +1,6 @@
 import { Milestone, RateTier, StudioConfig, Artwork } from '../types';
 
-export const INITIAL_DATA_VERSION = "anthrocraft_v_vtuber_gallery_2026";
+export const INITIAL_DATA_VERSION = "anthrocraft_v_vtuber_model_triple_sample_2026";
 
 export const INITIAL_CONTACTS: StudioConfig['socials'] = {
   "discord": "anthropocraft_studio",
@@ -61,6 +61,42 @@ export const INITIAL_MILESTONES: Milestone[] = [
 ];
 
 export const INITIAL_ARTWORKS: Artwork[] = [
+  {
+    id: "art-vtuber-avatar-paragraph",
+    title: "ORIGINAL ANTHRO VTUBER // RIG & MODEL ARCHITECTURE",
+    category: "VTUBER MODELS",
+    imageUrl: "https://user30093.na.imgto.link/public/20260920/your-paragraph-text.avif",
+    year: "2026",
+    medium: "Live2D Model Rig & Character Architecture / 300 DPI",
+    description: "Master anthropomorphic VTuber avatar design featuring separated cut meshes, physics-ready joints, dynamic expressions, and streaming turnkey preparation.",
+    aspectRatio: "portrait",
+    createdAt: 1788646100000,
+    isUserUploaded: true,
+  },
+  {
+    id: "art-vtuber-architecture-21",
+    title: "SIGNATURE ANTHRO VTUBER MODEL // LIVE2D ARCHITECTURE",
+    category: "VTUBER MODELS",
+    imageUrl: "https://user30093.na.imgto.link/public/20260920/anthropocraftstudio-21.avif",
+    year: "2026",
+    medium: "Live2D Model Rig & Expression Architecture / 300 DPI",
+    description: "Comprehensive anthropomorphic VTuber character model featuring cut-ready articulation layers, expression mapping, and full rigging architecture.",
+    aspectRatio: "portrait",
+    createdAt: 1788645900000,
+    isUserUploaded: true,
+  },
+  {
+    id: "art-vtuber-signature-22",
+    title: "SIGNATURE ANTHRO VTUBER MODEL // LIVE2D READY",
+    category: "VTUBER MODELS",
+    imageUrl: "https://user30093.na.imgto.link/public/20260920/anthropocraftstudio-22.avif",
+    year: "2026",
+    medium: "Live2D Ready Model & Cut Layers / 300 DPI",
+    description: "Full-body rig-ready anthropomorphic VTuber model with separated physics layers, expressive eye and ear tracking, streaming toggles, and turnaround architecture.",
+    aspectRatio: "portrait",
+    createdAt: 1788645600000,
+    isUserUploaded: true,
+  },
   {
     id: "art-vtuber-arctic-fox",
     title: "CELESTIAL CYBER FOX // LIVE2D MODEL",
@@ -352,6 +388,26 @@ export const INITIAL_ARTWORKS: Artwork[] = [
 ];
 
 export const INITIAL_RATE_TIERS: RateTier[] = [
+  {
+    "id": "vtuber-model",
+    "title": "VTUBER MODEL & LIVE2D RIG",
+    "price": "$500 To $2000+",
+    "subtitle": "Live2D Ready Anthropomorphic Model",
+    "description": "Full-body rig-ready Live2D anthropomorphic VTuber model with separated cut layers, hair physics, facial expressions, ear/tail toggles, and commercial streaming license.",
+    "turnaround": "4 - 8 Weeks",
+    "deliverables": [
+      "Separated PSD with organized cutting layer hierarchy",
+      "Live2D parameters & expressions guide sheet",
+      "Full commercial streaming usage rights included",
+      "Rigging consultation & testing support"
+    ],
+    "imageUrl": "https://user30093.na.imgto.link/public/20260920/anthropocraftstudio-21.avif",
+    "additionalImages": [
+      "https://user30093.na.imgto.link/public/20260920/anthropocraftstudio-22.avif",
+      "https://user30093.na.imgto.link/public/20260920/your-paragraph-text.avif"
+    ],
+    "featured": true
+  },
   {
     "id": "character-art",
     "title": "CHARACTER ART",

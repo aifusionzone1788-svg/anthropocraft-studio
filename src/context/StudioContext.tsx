@@ -294,6 +294,7 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     ? userEdit.deliverables
                     : defaultTier.deliverables,
                 imageUrl: userEdit.imageUrl || defaultTier.imageUrl,
+                additionalImages: userEdit.additionalImages || defaultTier.additionalImages,
               };
             }
             return defaultTier;

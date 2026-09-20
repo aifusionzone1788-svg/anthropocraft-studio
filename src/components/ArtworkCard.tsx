@@ -35,8 +35,20 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
 
   const handleImageError = () => {
     const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+(?:-\d+)*)?)/);
-    if (match && !imgSrc.includes('.webp')) {
-      setImgSrc(`/artworks/${match[1]}.webp`);
+    if (match) {
+      if (imgSrc.startsWith('http') && !imgSrc.includes('/artworks/')) {
+        setImgSrc(`/artworks/${match[1]}.avif`);
+      } else if (!imgSrc.includes('.webp')) {
+        setImgSrc(`/artworks/${match[1]}.webp`);
+      } else {
+        setHasError(true);
+      }
+    } else if (imgSrc.includes('your-paragraph-text')) {
+      if (imgSrc.startsWith('http') && !imgSrc.includes('/artworks/')) {
+        setImgSrc('/artworks/your-paragraph-text.avif');
+      } else {
+        setHasError(true);
+      }
     } else if (imgSrc.includes('mascot') && !imgSrc.includes('.webp')) {
       setImgSrc('/artworks/mascot.webp');
     } else {
