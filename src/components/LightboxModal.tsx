@@ -5,6 +5,7 @@ import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
 import { X, Calendar, Layers, Info, Trash2, Edit3, Check, RotateCcw, AlertCircle } from 'lucide-react';
 
 const CATEGORIES: GalleryCategory[] = [
+  'VTUBER MODELS',
   'CHARACTER ART',
   'PORTRAITS',
   'FULL-BODY ART',

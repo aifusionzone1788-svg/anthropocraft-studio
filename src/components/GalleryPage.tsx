@@ -10,6 +10,7 @@ import { motion } from 'motion/react';
 
 const CATEGORIES: GalleryCategory[] = [
   'ALL',
+  'VTUBER MODELS',
   'CHARACTER ART',
   'PORTRAITS',
   'FULL-BODY ART',

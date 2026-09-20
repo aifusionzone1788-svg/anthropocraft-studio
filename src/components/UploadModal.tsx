@@ -6,6 +6,7 @@ import { X, Upload, Check, AlertCircle, Sparkles, Loader2, Image as ImageIcon } 
 import { compressImageFile } from '../utils/imageHelper';
 
 const CATEGORIES: GalleryCategory[] = [
+  'VTUBER MODELS',
   'CHARACTER ART',
   'PORTRAITS',
   'FULL-BODY ART',

@@ -2,6 +2,7 @@ export type PageType = 'home' | 'gallery' | 'rates' | 'contact';
 
 export type GalleryCategory = 
   | 'ALL'
+  | 'VTUBER MODELS'
   | 'CHARACTER ART'
   | 'PORTRAITS'
   | 'FULL-BODY ART'
