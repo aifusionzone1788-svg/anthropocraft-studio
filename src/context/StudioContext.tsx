@@ -145,6 +145,9 @@ const LEGACY_SAMPLE_IDS = new Set([
   'art-nightshade',
   'art-neondrift',
   '1', '2', '3', '4', '5', '6',
+  'art-vtuber-arctic-fox',
+  'art-vtuber-crystal-dragon',
+  'art-vtuber-snow-leopard',
 ]);
 
 function isLegacySampleArtwork(item: any): boolean {
@@ -293,8 +296,8 @@ export const StudioProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                   Array.isArray(userEdit.deliverables) && userEdit.deliverables.length > 0
                     ? userEdit.deliverables
                     : defaultTier.deliverables,
-                imageUrl: userEdit.imageUrl || defaultTier.imageUrl,
-                additionalImages: userEdit.additionalImages || defaultTier.additionalImages,
+                imageUrl: undefined,
+                additionalImages: undefined,
               };
             }
             return defaultTier;

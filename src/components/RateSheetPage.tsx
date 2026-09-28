@@ -1,7 +1,6 @@
 import React from 'react';
 import { useStudio } from '../context/StudioContext';
 import { StarSparkle, CornerCrosshairs } from './DecorativeElements';
-import { RateTierImageControl } from './RateTierImageControl';
 import { HeadingReveal, FadeUp } from './ScrollReveal';
 import { motion } from 'motion/react';
 import {
@@ -15,7 +14,6 @@ import {
 export const RateSheetPage: React.FC = () => {
   const {
     rateTiers,
-    updateRateTier,
     openContactModal,
     studioConfig,
     isOwnerMode,
@@ -192,15 +190,6 @@ export const RateSheetPage: React.FC = () => {
                   <p className="text-xs sm:text-sm text-zinc-400 font-light leading-relaxed mb-6">
                     {tier.description}
                   </p>
-
-                  {/* Sample Artwork with Owner Mode Controls */}
-                  <RateTierImageControl
-                    tier={tier}
-                    isOwnerMode={isOwnerMode}
-                    onUpdateImage={(newImageUrl) =>
-                      updateRateTier(tier.id, { imageUrl: newImageUrl })
-                    }
-                  />
 
                   {/* Deliverables checklist */}
                   <div className="space-y-2.5 pb-6 border-b border-white/5">

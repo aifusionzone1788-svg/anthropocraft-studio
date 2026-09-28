@@ -1,6 +1,6 @@
 import { Milestone, RateTier, StudioConfig, Artwork } from '../types';
 
-export const INITIAL_DATA_VERSION = "anthrocraft_v_vtuber_model_triple_sample_2026";
+export const INITIAL_DATA_VERSION = "anthrocraft_v_remove_snow_leopard_2026";
 
 export const INITIAL_CONTACTS: StudioConfig['socials'] = {
   "discord": "anthropocraft_studio",
@@ -95,42 +95,6 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     description: "Full-body rig-ready anthropomorphic VTuber model with separated physics layers, expressive eye and ear tracking, streaming toggles, and turnaround architecture.",
     aspectRatio: "portrait",
     createdAt: 1788645600000,
-    isUserUploaded: true,
-  },
-  {
-    id: "art-vtuber-arctic-fox",
-    title: "CELESTIAL CYBER FOX // LIVE2D MODEL",
-    category: "VTUBER MODELS",
-    imageUrl: "/artworks/vtuber_model_live2d.jpg",
-    year: "2026",
-    medium: "Live2D Ready Rig Model & Cut Layers / 300 DPI",
-    description: "Full-body rig-ready Live2D anthropomorphic VTuber model with separated hair physics, ear twitches, eye tracking meshes, and custom expression toggles for streaming.",
-    aspectRatio: "portrait",
-    createdAt: 1788645200000,
-    isUserUploaded: true,
-  },
-  {
-    id: "art-vtuber-snow-leopard",
-    title: "SNOW LEOPARD STREAMER // RIGGING SHOWCASE",
-    category: "VTUBER MODELS",
-    imageUrl: "/artworks/vtuber_model_showcase.jpg",
-    year: "2026",
-    medium: "Complete VTuber Model Rig & Turnaround Architecture / 300 DPI",
-    description: "Architectural Live2D rigging breakdown featuring head XYZ parameter calibration, mouth vowel phonemes (A/I/U/E/O), breathing cycles, and cut-layer separation.",
-    aspectRatio: "wide",
-    createdAt: 1788645150000,
-    isUserUploaded: true,
-  },
-  {
-    id: "art-vtuber-crystal-dragon",
-    title: "CRYSTAL DRAKE // VTUBER AVATAR & EXPRESSIONS",
-    category: "VTUBER MODELS",
-    imageUrl: "/artworks/vtuber_model_dragon.jpg",
-    year: "2026",
-    medium: "Live2D Avatar Concept & Expressions Guide / 300 DPI",
-    description: "High-tier anthropomorphic dragon streamer avatar with luminescent crystal horns, dynamic tail physics layers, and 6 custom streaming emotion toggles.",
-    aspectRatio: "portrait",
-    createdAt: 1788645100000,
     isUserUploaded: true,
   },
   {
@@ -400,11 +364,6 @@ export const INITIAL_RATE_TIERS: RateTier[] = [
       "Live2D parameters & expressions guide sheet",
       "Full commercial streaming usage rights included",
       "Rigging consultation & testing support"
-    ],
-    "imageUrl": "https://user30093.na.imgto.link/public/20260920/anthropocraftstudio-21.avif",
-    "additionalImages": [
-      "https://user30093.na.imgto.link/public/20260920/anthropocraftstudio-22.avif",
-      "https://user30093.na.imgto.link/public/20260920/your-paragraph-text.avif"
     ],
     "featured": true
   },
