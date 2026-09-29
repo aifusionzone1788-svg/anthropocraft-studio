@@ -1,6 +1,6 @@
 import { Milestone, RateTier, StudioConfig, Artwork } from '../types';
 
-export const INITIAL_DATA_VERSION = "anthrocraft_v_remove_snow_leopard_2026";
+export const INITIAL_DATA_VERSION = "anthrocraft_v_custom_art_24_2026";
 
 export const INITIAL_CONTACTS: StudioConfig['socials'] = {
   "discord": "anthropocraft_studio",
@@ -95,6 +95,30 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     description: "Full-body rig-ready anthropomorphic VTuber model with separated physics layers, expressive eye and ear tracking, streaming toggles, and turnaround architecture.",
     aspectRatio: "portrait",
     createdAt: 1788645600000,
+    isUserUploaded: true,
+  },
+  {
+    id: "art-anthro-custom-24",
+    title: "BESPOKE ANTHRO CUSTOM SCENE",
+    category: "CUSTOM ARTWORK",
+    imageUrl: "https://user30093.na.imgto.link/public/20260929/anthropocraftstudio-24.avif",
+    year: "2026",
+    medium: "Panoramic Custom Masterwork / 300 DPI",
+    description: "Detailed custom anthropomorphic illustration featuring dynamic staging, environmental depth, nuanced character expression, and rich tonal rendering.",
+    aspectRatio: "wide",
+    createdAt: 1788646300000,
+    isUserUploaded: true,
+  },
+  {
+    id: "art-anthro-custom-23",
+    title: "CUSTOM ANTHROPOMORPHIC MASTERPIECE",
+    category: "CUSTOM ARTWORK",
+    imageUrl: "https://user30093.na.imgto.link/public/20260929/anthropocraftstudio-23.avif",
+    year: "2026",
+    medium: "Custom Digital Masterwork / 300 DPI",
+    description: "Signature bespoke custom anthropomorphic commission featuring intricate costume craftsmanship, cinematic atmospheric illumination, and expressive character storytelling.",
+    aspectRatio: "wide",
+    createdAt: 1788646200000,
     isUserUploaded: true,
   },
   {
