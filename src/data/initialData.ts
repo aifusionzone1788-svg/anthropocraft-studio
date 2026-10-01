@@ -1,6 +1,6 @@
 import { Milestone, RateTier, StudioConfig, Artwork } from '../types';
 
-export const INITIAL_DATA_VERSION = "anthrocraft_v_custom_art_24_2026";
+export const INITIAL_DATA_VERSION = "anthrocraft_v_vtuber_video_rig_3_2026";
 
 export const INITIAL_CONTACTS: StudioConfig['socials'] = {
   "discord": "anthropocraft_studio",
@@ -95,6 +95,48 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     description: "Full-body rig-ready anthropomorphic VTuber model with separated physics layers, expressive eye and ear tracking, streaming toggles, and turnaround architecture.",
     aspectRatio: "portrait",
     createdAt: 1788645600000,
+    isUserUploaded: true,
+  },
+  {
+    id: "art-vtuber-live2d-video-rig",
+    title: "LIVE2D RIG ANIMATION // VTUBER SHOWCASE",
+    category: "VTUBER MODELS",
+    imageUrl: "/artworks/anthropocraftstudio-vtuber-rig-showcase-poster.jpg",
+    videoUrl: "https://www.image2url.com/r2/default/videos/1790895681201-e7c6d0fc-6f42-4107-b5da-b3e9955367ae.mp4",
+    posterUrl: "/artworks/anthropocraftstudio-vtuber-rig-showcase-poster.jpg",
+    year: "2026",
+    medium: "Live2D Model Rig Animation & Motion Demo",
+    description: "Dynamic Live2D anthropomorphic VTuber model showcase demonstrating fluid head XYZ parameter tracking, eye-blinking cycles, mouth vowel phonemes, breathing motions, and physics dynamics.",
+    aspectRatio: "wide",
+    createdAt: 1788646400000,
+    isUserUploaded: true,
+  },
+  {
+    id: "art-vtuber-live2d-video-rig-2",
+    title: "EXPRESSIVE LIVE2D VTUBER MOTION DEMO",
+    category: "VTUBER MODELS",
+    imageUrl: "/artworks/anthropocraftstudio-vtuber-rig-showcase-2-poster.jpg",
+    videoUrl: "https://www.image2url.com/r2/default/videos/1790896083869-d5fb267d-71c5-4d31-894b-7d2caa279568.mp4",
+    posterUrl: "/artworks/anthropocraftstudio-vtuber-rig-showcase-2-poster.jpg",
+    year: "2026",
+    medium: "Live2D Expression & Physics Motion Showcase",
+    description: "Full Live2D anthropomorphic VTuber character demonstration presenting subtle facial expressions, angle rotation, layered tail and ear physics, and turnkey streaming responsiveness.",
+    aspectRatio: "wide",
+    createdAt: 1788646500000,
+    isUserUploaded: true,
+  },
+  {
+    id: "art-vtuber-live2d-video-rig-3",
+    title: "ADVANCED LIVE2D VTUBER ARTICULATION",
+    category: "VTUBER MODELS",
+    imageUrl: "/artworks/anthropocraftstudio-vtuber-rig-showcase-3-poster.jpg",
+    videoUrl: "https://www.image2url.com/r2/default/videos/1790896353227-430ba4fc-3b49-4024-a455-4e347df5cced.mp4",
+    posterUrl: "/artworks/anthropocraftstudio-vtuber-rig-showcase-3-poster.jpg",
+    year: "2026",
+    medium: "Live2D Articulation & Multi-Axis Rig Demo",
+    description: "Multi-axis Live2D anthropomorphic VTuber avatar motion demo displaying wide rotational angles, physics-driven secondary motion, dynamic mouth phonemes, and expressive lighting.",
+    aspectRatio: "wide",
+    createdAt: 1788646600000,
     isUserUploaded: true,
   },
   {

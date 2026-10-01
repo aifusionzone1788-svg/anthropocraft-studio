@@ -15,6 +15,8 @@ export interface Artwork {
   title: string;
   category: GalleryCategory;
   imageUrl: string; // Base64 dataURL or uploaded URL
+  videoUrl?: string; // Optional video URL (.mp4 or stream) for Live2D animations/rig showcases
+  posterUrl?: string; // Optional video poster thumbnail
   year?: string;
   medium?: string;
   description?: string;

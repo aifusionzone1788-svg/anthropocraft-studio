@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStudio } from '../context/StudioContext';
 import { GalleryCategory } from '../types';
 import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
-import { X, Calendar, Layers, Info, Trash2, Edit3, Check, RotateCcw, AlertCircle } from 'lucide-react';
+import { X, Calendar, Layers, Info, Trash2, Edit3, Check, RotateCcw, AlertCircle, Play } from 'lucide-react';
 
 const CATEGORIES: GalleryCategory[] = [
   'VTUBER MODELS',
@@ -24,6 +24,11 @@ export const LightboxModal: React.FC = () => {
   const [editYear, setEditYear] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [imgSrc, setImgSrc] = useState('');
+  const [vidSrc, setVidSrc] = useState('');
+  const isVideo = Boolean(
+    lightboxArtwork?.videoUrl ||
+    (typeof lightboxArtwork?.imageUrl === 'string' && lightboxArtwork.imageUrl.includes('.mp4'))
+  );
   const [imgError, setImgError] = useState(false);
 
   // Sync edit form fields whenever lightbox opens a piece
@@ -35,10 +40,28 @@ export const LightboxModal: React.FC = () => {
       setEditYear(lightboxArtwork.year || '');
       setEditDescription(lightboxArtwork.description || '');
       setImgSrc(lightboxArtwork.imageUrl);
+      setVidSrc(
+        lightboxArtwork.videoUrl ||
+        (typeof lightboxArtwork.imageUrl === 'string' && lightboxArtwork.imageUrl.includes('.mp4') ? lightboxArtwork.imageUrl : '')
+      );
       setImgError(false);
       setIsEditing(false);
     }
   }, [lightboxArtwork]);
+
+  const handleVideoError = () => {
+    if (vidSrc.startsWith('http') && !vidSrc.includes('/artworks/')) {
+      if (vidSrc.includes('1790896353227')) {
+        setVidSrc('/artworks/anthropocraftstudio-vtuber-rig-showcase-3.mp4');
+      } else if (vidSrc.includes('1790896083869')) {
+        setVidSrc('/artworks/anthropocraftstudio-vtuber-rig-showcase-2.mp4');
+      } else {
+        setVidSrc('/artworks/anthropocraftstudio-vtuber-rig-showcase.mp4');
+      }
+    } else {
+      setImgError(true);
+    }
+  };
 
   const handleImageError = () => {
     const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+(?:-\d+)*)?)/);
@@ -104,6 +127,12 @@ export const LightboxModal: React.FC = () => {
             <span className="text-[#C5A059] text-[11px] uppercase tracking-wider font-mono hidden sm:inline">
               {lightboxArtwork.category}
             </span>
+            {isVideo && (
+              <span className="flex items-center gap-1 px-2 py-0.5 font-mono bg-[#C5A059]/20 border border-[#C5A059]/50 text-[#C5A059] text-[10px] font-bold">
+                <Play className="w-2.5 h-2.5 fill-[#C5A059]" />
+                <span>ANIMATED LIVE2D RIG</span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -148,13 +177,28 @@ export const LightboxModal: React.FC = () => {
         {/* Main Artwork Viewport */}
         <div className="relative flex-1 flex items-center justify-center p-4 bg-[#050505] overflow-auto max-h-[66vh]">
           {!imgError ? (
-            <img
-              src={imgSrc}
-              alt={lightboxArtwork.title}
-              referrerPolicy="no-referrer"
-              onError={handleImageError}
-              className="max-h-[62vh] max-w-full object-contain rounded-xs border border-white/10 shadow-2xl"
-            />
+            isVideo && vidSrc ? (
+              <div className="relative flex flex-col items-center justify-center w-full max-h-[66vh]">
+                <video
+                  src={vidSrc}
+                  poster={lightboxArtwork.posterUrl || (!lightboxArtwork.imageUrl.includes('.mp4') ? lightboxArtwork.imageUrl : undefined)}
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  onError={handleVideoError}
+                  className="max-h-[62vh] max-w-full object-contain rounded-xs border border-white/10 shadow-2xl bg-black"
+                />
+              </div>
+            ) : (
+              <img
+                src={imgSrc}
+                alt={lightboxArtwork.title}
+                referrerPolicy="no-referrer"
+                onError={handleImageError}
+                className="max-h-[62vh] max-w-full object-contain rounded-xs border border-white/10 shadow-2xl"
+              />
+            )
           ) : (
             <div className="flex flex-col items-center justify-center p-8 text-center max-w-md bg-[#0c0c0e] border border-dashed border-red-500/30 rounded-xs">
               <AlertCircle className="w-10 h-10 text-amber-500/80 mb-3" />

@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Artwork } from '../types';
 import { useStudio } from '../context/StudioContext';
 import { CornerCrosshairs, StarSparkle } from './DecorativeElements';
-import { Maximize2, Trash2, AlertCircle } from 'lucide-react';
+import { Maximize2, Trash2, AlertCircle, Play } from 'lucide-react';
 import { useTiltAnimation } from '../hooks/useTiltAnimation';
 
 interface ArtworkCardProps {
@@ -19,6 +19,9 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
 }) => {
   const { openLightbox, isOwnerMode, removeArtwork } = useStudio();
   const [imgSrc, setImgSrc] = useState(artwork.imageUrl);
+  const isVideo = Boolean(artwork.videoUrl || (typeof artwork.imageUrl === 'string' && artwork.imageUrl.includes('.mp4')));
+  const initialVidSrc = artwork.videoUrl || (typeof artwork.imageUrl === 'string' && artwork.imageUrl.includes('.mp4') ? artwork.imageUrl : '');
+  const [vidSrc, setVidSrc] = useState(initialVidSrc);
   const [hasError, setHasError] = useState(false);
 
   // 60fps 3D Parallax Tilt with dynamic specular reflection
@@ -30,8 +33,23 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
 
   useEffect(() => {
     setImgSrc(artwork.imageUrl);
+    setVidSrc(artwork.videoUrl || (typeof artwork.imageUrl === 'string' && artwork.imageUrl.includes('.mp4') ? artwork.imageUrl : ''));
     setHasError(false);
-  }, [artwork.imageUrl]);
+  }, [artwork.imageUrl, artwork.videoUrl]);
+
+  const handleVideoError = () => {
+    if (vidSrc.startsWith('http') && !vidSrc.includes('/artworks/')) {
+      if (vidSrc.includes('1790896353227')) {
+        setVidSrc('/artworks/anthropocraftstudio-vtuber-rig-showcase-3.mp4');
+      } else if (vidSrc.includes('1790896083869')) {
+        setVidSrc('/artworks/anthropocraftstudio-vtuber-rig-showcase-2.mp4');
+      } else {
+        setVidSrc('/artworks/anthropocraftstudio-vtuber-rig-showcase.mp4');
+      }
+    } else {
+      setHasError(true);
+    }
+  };
 
   const handleImageError = () => {
     const match = imgSrc.match(/(anthropo[c]?raftstudio(?:-\d+(?:-\d+)*)?)/);
@@ -92,16 +110,31 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
         style={{ background: glareBackground }}
       />
 
-      {/* Main Image or Error Placeholder */}
+      {/* Main Image/Video or Error Placeholder */}
       {!hasError ? (
-        <img
-          src={imgSrc}
-          alt={artwork.title}
-          referrerPolicy="no-referrer"
-          onError={handleImageError}
-          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
-          loading="lazy"
-        />
+        isVideo && vidSrc ? (
+          <div className="h-full w-full overflow-hidden bg-black flex items-center justify-center">
+            <video
+              src={vidSrc}
+              poster={artwork.posterUrl || (!artwork.imageUrl.includes('.mp4') ? artwork.imageUrl : undefined)}
+              autoPlay
+              muted
+              loop
+              playsInline
+              onError={handleVideoError}
+              className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+            />
+          </div>
+        ) : (
+          <img
+            src={imgSrc}
+            alt={artwork.title}
+            referrerPolicy="no-referrer"
+            onError={handleImageError}
+            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
+            loading="lazy"
+          />
+        )
       ) : (
         <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center bg-[#0d0d0f] border border-dashed border-red-500/20">
           <AlertCircle className="w-8 h-8 text-amber-500/80 mb-2" />
@@ -127,6 +160,12 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
           {artwork.category}
         </span>
         <div className="flex items-center gap-1.5">
+          {isVideo && (
+            <span className="flex items-center gap-1 px-2 py-0.5 font-mono bg-[#C5A059]/20 border border-[#C5A059]/50 text-[#C5A059] text-[9px] font-bold tracking-wider">
+              <Play className="w-2.5 h-2.5 fill-[#C5A059]" />
+              <span>LIVE2D RIG</span>
+            </span>
+          )}
           {artwork.year && (
             <span className="px-2 py-0.5 font-mono bg-[#050505]/80 backdrop-blur-sm border border-white/10 text-zinc-400 text-[10px]">
               {artwork.year}
@@ -149,8 +188,8 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
       {/* Hover Center Indicator */}
       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
         <div className="flex items-center gap-2 px-4 py-2 bg-[#050505]/90 text-[#C5A059] border border-[#C5A059] text-xs font-display font-bold tracking-widest uppercase shadow-xl backdrop-blur-sm">
-          <Maximize2 className="h-4 w-4" />
-          <span>VIEW FULL RESOLUTION</span>
+          {isVideo ? <Play className="h-4 w-4 fill-[#C5A059]" /> : <Maximize2 className="h-4 w-4" />}
+          <span>{isVideo ? 'WATCH LIVE2D ANIMATION' : 'VIEW FULL RESOLUTION'}</span>
         </div>
       </div>
 
