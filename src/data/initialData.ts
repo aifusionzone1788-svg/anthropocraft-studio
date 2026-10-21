@@ -1,6 +1,6 @@
 import { Milestone, RateTier, StudioConfig, Artwork } from '../types';
 
-export const INITIAL_DATA_VERSION = "anthrocraft_v_vtuber_video_rig_3_2026";
+export const INITIAL_DATA_VERSION = "anthrocraft_v_remove_broken_ref_sheet_2026";
 
 export const INITIAL_CONTACTS: StudioConfig['socials'] = {
   "discord": "anthropocraft_studio",
@@ -401,18 +401,6 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     description: "High-resolution master character guide with anatomical turnaround angles, expression guides, and color swatch hierarchy.",
     aspectRatio: "wide",
     createdAt: 1788639500000,
-    isUserUploaded: true,
-  },
-  {
-    id: "art-character-reference-sheet",
-    title: "CHARACTER MODEL GUIDE",
-    category: "REFERENCE SHEETS",
-    imageUrl: "https://cdn.phototourl.com/free/2026-09-05-553f3779-48a7-4585-ba97-2a0beed0e732.png",
-    year: "2026",
-    medium: "Digital Character Turnaround Sheet / 300 DPI",
-    description: "Detailed character model guide featuring turnaround profiles, precise color palette swatches, and character annotations.",
-    aspectRatio: "wide",
-    createdAt: 1788638900000,
     isUserUploaded: true,
   },
 ];
