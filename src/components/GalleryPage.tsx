@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useStudio } from '../context/StudioContext';
 import { GalleryCategory } from '../types';
 import { StarSparkle } from './DecorativeElements';
 import { ArtworkCard } from './ArtworkCard';
-import { Sparkles, Layers, Send, Upload, Trash2 } from 'lucide-react';
+import { Sparkles, Layers, Send, Upload, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { compressImageFile } from '../utils/imageHelper';
 import { HeadingReveal, FadeUp } from './ScrollReveal';
 import { motion } from 'motion/react';
@@ -24,6 +24,36 @@ export const GalleryPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<GalleryCategory>('ALL');
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScrollable = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 6);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 6);
+  };
+
+  useEffect(() => {
+    checkScrollable();
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScrollable, { passive: true });
+    window.addEventListener('resize', checkScrollable);
+    return () => {
+      el.removeEventListener('scroll', checkScrollable);
+      window.removeEventListener('resize', checkScrollable);
+    };
+  }, [artworks.length]);
+
+  const scrollSections = (direction: 'left' | 'right') => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const scrollAmount = direction === 'left' ? -300 : 300;
+    el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -151,42 +181,116 @@ export const GalleryPage: React.FC = () => {
           </FadeUp>
         </div>
 
-        {/* Categories Bar */}
+        {/* Categories Scroller Bar */}
         <FadeUp delay={0.2} yOffset={16} className="my-8">
-          <div className="flex items-center justify-between gap-4 overflow-x-auto pb-2 scrollbar-none">
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {CATEGORIES.map((cat) => {
-                const count = cat === 'ALL'
-                  ? artworks.length
-                  : artworks.filter((a) => a.category === cat).length;
+          <div className="relative border border-white/10 bg-[#08080a] p-2 sm:p-2.5">
+            <div className="flex items-center gap-2">
+              {/* Left Scroll Button */}
+              <button
+                type="button"
+                onClick={() => scrollSections('left')}
+                disabled={!canScrollLeft}
+                aria-label="Scroll section categories left"
+                className={`shrink-0 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 border transition-all cursor-pointer ${
+                  canScrollLeft
+                    ? 'border-[#C5A059]/50 bg-[#C5A059]/15 text-[#C5A059] hover:bg-[#C5A059] hover:text-black shadow-[0_0_12px_rgba(197,160,89,0.25)]'
+                    : 'border-white/5 bg-[#050505] text-zinc-600 opacity-40 cursor-not-allowed'
+                }`}
+                title="Move sections left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
 
-                const isSelected = selectedCategory === cat;
+              {/* Scrollable Track Container */}
+              <div className="relative flex-1 overflow-hidden">
+                {/* Left Gradient Fade Mask */}
+                {canScrollLeft && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-[#08080a] to-transparent"
+                  />
+                )}
 
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 text-xs font-display font-bold tracking-[0.15em] uppercase transition-all border cursor-pointer ${
-                      isSelected
-                        ? 'border-[#C5A059] bg-[#C5A059]/10 text-[#C5A059]'
-                        : 'border-white/10 bg-[#0c0c0c] text-zinc-400 hover:border-white/20 hover:text-[#F5F5F5]'
-                    }`}
-                  >
-                    <span>{cat}</span>
-                    {count > 0 && (
-                      <span className="ml-2 font-mono text-[10px] text-zinc-400">
-                        ({count})
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                {/* Categories Track */}
+                <div
+                  ref={scrollerRef}
+                  className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto scroll-smooth py-1 select-none"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {CATEGORIES.map((cat) => {
+                    const count = cat === 'ALL'
+                      ? artworks.length
+                      : artworks.filter((a) => a.category === cat).length;
+
+                    const isSelected = selectedCategory === cat;
+
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={(e) => {
+                          setSelectedCategory(cat);
+                          e.currentTarget.scrollIntoView({
+                            behavior: 'smooth',
+                            inline: 'center',
+                            block: 'nearest',
+                          });
+                        }}
+                        className={`whitespace-nowrap shrink-0 px-3.5 sm:px-4 py-2 text-xs font-display font-bold tracking-[0.15em] uppercase transition-all border cursor-pointer ${
+                          isSelected
+                            ? 'border-[#C5A059] bg-[#C5A059]/15 text-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.2)]'
+                            : 'border-white/10 bg-[#0c0c0c] text-zinc-400 hover:border-white/25 hover:text-[#F5F5F5] hover:bg-white/5'
+                        }`}
+                      >
+                        <span>{cat}</span>
+                        {count > 0 && (
+                          <span className={`ml-2 font-mono text-[10px] ${isSelected ? 'text-[#C5A059]' : 'text-zinc-500'}`}>
+                            ({count})
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Right Gradient Fade Mask */}
+                {canScrollRight && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-l from-[#08080a] to-transparent"
+                  />
+                )}
+              </div>
+
+              {/* Right Scroll Button */}
+              <button
+                type="button"
+                onClick={() => scrollSections('right')}
+                disabled={!canScrollRight}
+                aria-label="Scroll section categories right"
+                className={`shrink-0 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 border transition-all cursor-pointer ${
+                  canScrollRight
+                    ? 'border-[#C5A059]/50 bg-[#C5A059]/15 text-[#C5A059] hover:bg-[#C5A059] hover:text-black shadow-[0_0_12px_rgba(197,160,89,0.25)]'
+                    : 'border-white/5 bg-[#050505] text-zinc-600 opacity-40 cursor-not-allowed'
+                }`}
+                title="Move sections right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-zinc-400">
-              <Layers className="w-3.5 h-3.5 text-[#C5A059]" />
-              <span>{artworks.length} PIECES IN ARCHIVE</span>
+            {/* Bottom Scroller Progress & Category Helper Bar */}
+            <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between px-1 text-[10px] font-mono text-zinc-500">
+              <div className="flex items-center gap-1.5 text-zinc-400">
+                <span className="text-[#C5A059]">MOVE SECTIONS</span>
+                <span>//</span>
+                <span className="hidden sm:inline">USE ARROWS OR SWIPE TO EXPLORE CATEGORIES</span>
+                <span className="sm:hidden">SWIPE OR USE ARROWS</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Layers className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span className="text-zinc-400">{artworks.length} PIECES TOTAL</span>
+              </div>
             </div>
           </div>
         </FadeUp>
