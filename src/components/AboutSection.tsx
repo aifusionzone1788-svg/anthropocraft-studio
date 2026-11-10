@@ -9,8 +9,15 @@ import { OrganicBreathing } from './OrganicBreathing';
 export const AboutSection: React.FC = () => {
   const { studioConfig, artworks } = useStudio();
 
-  // Highlight studio character study piece
-  const aboutArt = artworks[1] || artworks[0];
+  // Highlight studio character study piece (excluding avatar-paragraph and architecture-21 from front page per user preference)
+  const eligibleArt = artworks.filter(
+    (art) =>
+      art.id !== 'art-vtuber-avatar-paragraph' &&
+      art.id !== 'art-vtuber-architecture-21' &&
+      !art.imageUrl.includes('your-paragraph-text') &&
+      !art.imageUrl.includes('anthropocraftstudio-21')
+  );
+  const aboutArt = eligibleArt[1] || eligibleArt[0] || artworks[0];
 
   return (
     <section

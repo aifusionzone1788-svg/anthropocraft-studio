@@ -1,6 +1,6 @@
 import { Milestone, RateTier, StudioConfig, Artwork } from '../types';
 
-export const INITIAL_DATA_VERSION = "anthrocraft_v_remove_broken_ref_sheet_2026";
+export const INITIAL_DATA_VERSION = "anthrocraft_v_vtuber_22_video_live2d_2026";
 
 export const INITIAL_CONTACTS: StudioConfig['socials'] = {
   "discord": "anthropocraft_studio",
@@ -90,6 +90,8 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     title: "SIGNATURE ANTHRO VTUBER MODEL // LIVE2D READY",
     category: "VTUBER MODELS",
     imageUrl: "https://user30093.na.imgto.link/public/20260920/anthropocraftstudio-22.avif",
+    videoUrl: "https://www.image2url.com/r2/default/videos/1794353075701-4138b974-64d7-463b-b098-5a7a1c9bb87b.mp4",
+    posterUrl: "/artworks/anthropocraftstudio-22-poster.jpg",
     year: "2026",
     medium: "Live2D Ready Model & Cut Layers / 300 DPI",
     description: "Full-body rig-ready anthropomorphic VTuber model with separated physics layers, expressive eye and ear tracking, streaming toggles, and turnaround architecture.",

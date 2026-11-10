@@ -9,8 +9,14 @@ import { motion } from 'motion/react';
 export const IntroSection: React.FC = () => {
   const { studioConfig, artworks, setActivePage } = useStudio();
 
-  // Signature featured piece
-  const featuredArt = artworks[0];
+  // Signature featured piece (excluding avatar-paragraph and architecture-21 from front page per user preference)
+  const featuredArt = artworks.find(
+    (art) =>
+      art.id !== 'art-vtuber-avatar-paragraph' &&
+      art.id !== 'art-vtuber-architecture-21' &&
+      !art.imageUrl.includes('your-paragraph-text') &&
+      !art.imageUrl.includes('anthropocraftstudio-21')
+  ) || artworks[0];
 
   return (
     <section className="relative border-t border-white/10 bg-[#050505] px-6 sm:px-8 lg:px-12 py-20 lg:py-28 overflow-hidden">

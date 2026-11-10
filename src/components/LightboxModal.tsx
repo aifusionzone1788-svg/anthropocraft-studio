@@ -51,7 +51,9 @@ export const LightboxModal: React.FC = () => {
 
   const handleVideoError = () => {
     if (vidSrc.startsWith('http') && !vidSrc.includes('/artworks/')) {
-      if (vidSrc.includes('1790896353227')) {
+      if (vidSrc.includes('1794353075701') || vidSrc.includes('anthropocraftstudio-22')) {
+        setVidSrc('/artworks/anthropocraftstudio-22-video.mp4');
+      } else if (vidSrc.includes('1790896353227')) {
         setVidSrc('/artworks/anthropocraftstudio-vtuber-rig-showcase-3.mp4');
       } else if (vidSrc.includes('1790896083869')) {
         setVidSrc('/artworks/anthropocraftstudio-vtuber-rig-showcase-2.mp4');
